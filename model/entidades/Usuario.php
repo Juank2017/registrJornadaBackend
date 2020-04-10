@@ -16,12 +16,26 @@ class Usuario {
     protected $login;
     protected $password;
     protected $idUsuario;
-    
-    
-    function __construct($login, $password, $idUsuario) {
-        $this->login = $login;
-        $this->password = $password;
-        $this->idUsuario = $idUsuario;
+    protected $roles;
+    protected $empresas;
+    function getEmpresas() {
+        return $this->empresas;
+    }
+
+    function setEmpresas($empresas): void {
+        $this->empresas = $empresas;
+    }
+
+        function getRoles() {
+        return $this->roles;
+    }
+
+    function setRoles($roles): void {
+        $this->roles = $roles;
+    }
+
+        function __construct() {
+   
     }
 
     
@@ -50,7 +64,7 @@ class Usuario {
     }
 
 
-    
+  
     
     
 }
