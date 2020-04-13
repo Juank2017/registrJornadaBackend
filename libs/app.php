@@ -42,7 +42,7 @@ class App{
                     }
                    
                
-                    $controller->{$url[1]}($param,$token);
+                    $controller->{$url[1]}($token,$param);
                 }else{
                    
                     // solo se llama al método
@@ -50,7 +50,7 @@ class App{
                 }
             }else{
                 // si se llama a un controlador
-                $controller->render();  
+                $controller->index($token);  
             }
         }else{
             //$controller = new Errores();

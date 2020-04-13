@@ -13,14 +13,12 @@
  */
 class Empresa {
     //put your code here
-    protected $idEmpresa;
+    protected $idEMPRESA;
     protected $nombre;
     protected $cif;
     
-    function __construct($idEmpresa, $nombre, $cif) {
-        $this->idEmpresa = $idEmpresa;
-        $this->nombre = $nombre;
-        $this->cif = $cif;
+    function __construct() {
+ 
     }
 
     

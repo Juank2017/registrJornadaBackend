@@ -23,15 +23,8 @@ class Marcado {
     protected $idEMPLEADO;
     
     
-    function __construct($idMarcado, $fecha, $hora_inicio, $hora_final, $longitud, $latitud, $idTipo_Marcaje, $idEMPLEADO) {
-        $this->idMarcado = $idMarcado;
-        $this->fecha = $fecha;
-        $this->hora_inicio = $hora_inicio;
-        $this->hora_final = $hora_final;
-        $this->longitud = $longitud;
-        $this->latitud = $latitud;
-        $this->idTipo_Marcaje = $idTipo_Marcaje;
-        $this->idEMPLEADO = $idEMPLEADO;
+    function __construct() {
+
     }
     function getIdMarcado() {
         return $this->idMarcado;

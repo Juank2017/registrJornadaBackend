@@ -19,13 +19,8 @@ class Sede {
     protected $latitud;
     protected $idEMPRESA;
     
-    function __construct($idSede, $nombre, $direccion, $longitud, $latitud, $idEMPRESA) {
-        $this->idSede = $idSede;
-        $this->nombre = $nombre;
-        $this->direccion = $direccion;
-        $this->longitud = $longitud;
-        $this->latitud = $latitud;
-        $this->idEMPRESA = $idEMPRESA;
+    function __construct() {
+       
     }
     function getIdSede() {
         return $this->idSede;

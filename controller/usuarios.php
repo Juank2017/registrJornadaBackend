@@ -36,37 +36,44 @@ class usuarios extends Controller
      * Obtiene todos los usuarios
      * GET
      */
-    function usuarios($token)
-    {
-        try {
-            //comprobamos que el token esté ok
-            $decoded = JWT::decode($token, constant('key'), array('HS256'));
-            //extraemos los datos del modelo
-            $usuarios = $this->model->getUsuarios();
-            //si vienen datos
-            if ($usuarios != null) {
-                //establecemos el código de estado 200->ok
-                http_response_code(200);
-                //formateamos la salida
-                $salida = [];
-                foreach ($usuarios as $key => $value) {
-                    array_push($salida, ["id" => $value->getIdUsuario(), "login" => $value->getLogin(), "roles" => $value->getRoles(), "empresas" => $value->getEmpresas()]);
-                }
-                echo json_encode($salida);
-            } else {
-                //si no hay usuarios mando código 404
-                http_response_code(404);
-                echo json_encode(array("mensaje" => "No se han encontrado usuarios"));
-            }
-        } catch (Exception $e) {
-            // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
-            http_response_code(401);
+    function index($token)
+    {        //comprueba que sea una petición get
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
 
-            // show error message
-            echo json_encode(array(
-                "message" => 'Acceso denegado',
-                "error" => $e->getMessage()
-            ));
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //extraemos los datos del modelo
+                $usuarios = $this->model->getUsuarios();
+                //si vienen datos
+                if ($usuarios != null) {
+                    //establecemos el código de estado 200->ok
+                    http_response_code(200);
+                    //formateamos la salida
+                    $salida = [];
+                    foreach ($usuarios as $key => $value) {
+
+                        array_push($salida, ["id" => $value->getIdUsuario(), "login" => $value->getLogin(), "roles" => $value->getRoles(), "empresas" => $value->getEmpresas()]);
+                    }
+                    //a print_r($salida);
+                    echo json_encode($salida);
+                } else {
+                    //si no hay usuarios mando código 404
+                    http_response_code(404);
+                    echo json_encode(array("mensaje" => "No se han encontrado usuarios"));
+                }
+            } catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
+            }
         }
     }
 
@@ -74,141 +81,230 @@ class usuarios extends Controller
      * Obtiene un usuario por id
      * GET
      */
-    function usuario($param, $token)
-    {
-        //obtengo el id que viene en el array $param
-        $id = $param[0];
-        try {
-            //comprobamos que el token esté ok
-            $decoded = JWT::decode($token, constant('key'), array('HS256'));
-            //obtengo el usuario
-            $usuarioDB = $this->model->getUserById($id);
+    function usuario( $token,$param=[])
+    {    //comprueba que sea una petición get
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            //obtengo el id que viene en el array $param
+            $id = count($param) > 0 ? $param[0] : "";
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //obtengo el usuario
+                $usuarioDB = $this->model->getUserById($id);
 
-            if ($usuarioDB != null) {
-                //establecemos el código de estado 200->ok
-                http_response_code(200);
-                //formateamos la salida
-                $salida = [];
+                if ($usuarioDB != null) {
+                    //establecemos el código de estado 200->ok
+                    http_response_code(200);
+                    //formateamos la salida
+                    $salida = [];
 
-                array_push($salida, ["id" => $usuarioDB->getIdUsuario(), "login" => $usuarioDB->getLogin(), "roles" => $usuarioDB->getRoles(), "empresas" => $usuarioDB->getEmpresas()]);
+                    array_push($salida, ["id" => $usuarioDB->getIdUsuario(), "login" => $usuarioDB->getLogin(), "roles" => $usuarioDB->getRoles(), "empresas" => $usuarioDB->getEmpresas()]);
 
-                echo json_encode($salida);
-            } else {
-                //si no existe usuario mando código 404
-                http_response_code(404);
-                echo json_encode(array("mensaje" => "No se han encontrado el usuario"));
+                    echo json_encode($salida);
+                } else {
+                    //si no existe usuario mando código 404
+                    http_response_code(404);
+                    echo json_encode(array("mensaje" => "No se han encontrado el usuario"));
+                }
+            } catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
             }
-        } catch (Exception $e) {
-            // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
-            http_response_code(401);
-
-            // show error message
-            echo json_encode(array(
-                "message" => 'Acceso denegado',
-                "error" => $e->getMessage()
-            ));
         }
     }
 
     /**
      * Crea un usuario
      */
-    function crear($token)
+    function create($token)
     {
+        //comprueba que sea una petición POST
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            $json = file_get_contents('php://input');
 
-        $json = file_get_contents('php://input');
+            // echo $json;
+            $data = json_decode($json, true);
+            if ($data != null && array_key_exists('usuario', $data)) {
+                $usuario = array_key_exists('usuario', $data) ?  $data['usuario'] : '';
 
-       // echo $json;
-        $data = json_decode($json,true);
-        $usuario= $data['usuario'];
-        $login= $usuario['login'];
-        $password= password_hash($usuario['password'],PASSWORD_DEFAULT);
-
-        $nuevoUsuario= new Usuario();
-        $nuevoUsuario->setLogin($login);
-        $nuevoUsuario->setPassword($password);
-        $nuevoUsuario->setRoles($usuario['roles']);
-        $nuevoUsuario->setEmpresas($usuario['empresas']);
+                $login = array_key_exists('login', $usuario) ? $usuario['login'] : '';
+                $password = array_key_exists('password', $usuario) ? password_hash($usuario['password'], PASSWORD_DEFAULT) : '';
+                if (empty($login) || empty($password)) {
+                    http_response_code(400);
+                    echo json_encode(array("mensaje" => "Faltan datos"));
+                } else {
 
 
-       try {
-            //comprobamos que el token esté ok
-            $decoded = JWT::decode($token, constant('key'), array('HS256'));
-            //compruebo si el login ya existe
-            $usuarioDB = $this->model->getUserByLogin($login);
-            if (!$usuarioDB instanceof Usuario){
+                    $nuevoUsuario = new Usuario();
+                    $nuevoUsuario->setLogin($login);
+                    $nuevoUsuario->setPassword($password);
+                    $nuevoUsuario->setRoles($usuario['roles']);
+                    $nuevoUsuario->setEmpresas($usuario['empresas']);
 
-            
-            //intento insertar el usuario
-            $usuarioDB = $this->model->insertaUsuario($nuevoUsuario);
-         
-            if ( $usuarioDB instanceof Usuario) {
-                //establecemos el código de estado 200->ok
-                http_response_code(200);
-                //formateamos la salida
-                $salida = [];
 
-                array_push($salida, ["id" => $usuarioDB->getIdUsuario(), "login" => $usuarioDB->getLogin(), "roles" => $usuarioDB->getRoles(), "empresas" => $usuarioDB->getEmpresas()]);
+                    try {
+                        //comprobamos que el token esté ok
+                        $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                        //compruebo si el login ya existe
+                        $usuarioDB = $this->model->getUserByLogin($login);
 
-                echo json_encode($salida);
+                        if (!$usuarioDB instanceof Usuario) {
+
+
+                            //intento insertar el usuario
+                            $usuarioDB = $this->model->createUser($nuevoUsuario);
+
+                            if ($usuarioDB instanceof Usuario) {
+                                //establecemos el código de estado 200->ok
+                                http_response_code(200);
+                                //formateamos la salida
+                                $salida = [];
+
+                                array_push($salida, ["id" => $usuarioDB->getIdUsuario(), "login" => $usuarioDB->getLogin(), "roles" => $usuarioDB->getRoles(), "empresas" => $usuarioDB->getEmpresas()]);
+
+                                echo json_encode($salida);
+                            } else {
+                                //si no existe usuario mando código 404
+                                http_response_code(500);
+                                echo json_encode(array("mensaje" => "No se ha podido insertar el usuario"));
+                            }
+                        } else {
+
+                            http_response_code(400);
+
+                            // show error message
+                            echo json_encode(array(
+                                "message" => 'El login ya existe.'
+                            ));
+                        }
+                    } catch (Exception $e) {
+                        // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                        http_response_code(401);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Acceso denegado',
+                            "error" => $e->getMessage()
+                        ));
+                    }
+                }
             } else {
-                //si no existe usuario mando código 404
-                http_response_code(500);
-                echo json_encode(array("mensaje" => "No se ha podido insertar el usuario"));
+                http_response_code(400);
+                echo json_encode((array("mensaje" => 'Los datos recibidos no tienen el formato correcto.')));
             }
-        }else{
-            // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
-            http_response_code(400);
-
-            // show error message
-            echo json_encode(array(
-                "message" => 'El login ya existe.'
-            ));
-        }
-        } catch (Exception $e) {
-            // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
-            http_response_code(401);
-
-            // show error message
-            echo json_encode(array(
-                "message" => 'Acceso denegado',
-                "error" => $e->getMessage()
-            ));
         }
     }
 
-/**
- * Borrar un usuario de la bbdd
- */
-function delete($param,$token){
-    //obtengo el id que viene en el array $param
+    /**
+     * Borrar un usuario de la bbdd
+     */
+    function delete($token, $param = [])
+    {
+        if ($_SERVER['REQUEST_METHOD'] != 'DELETE') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            //obtengo el id que viene en el array $param
 
-    $id = $param[0];
-    echo $id;
-    try {
-        //comprobamos que el token esté ok
-        $decoded = JWT::decode($token, constant('key'), array('HS256'));
-        //obtengo el usuario
-        $respuesta = $this->model->eliminaUsuario($id);
-  
-        switch ($respuesta){
-            case "200": 
-                echo json_encode(array("mensaje" => "Usuario eliminado correctamente"));
-            break;
-            case "400": 
-                echo json_encode(array("mensaje" => "No se ha podido borrar el usuario"));
-            break;
+            $id = count($param) > 0 ? $param[0] : "";
+
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //obtengo el usuario
+                $respuesta = $this->model->deleteUser($id);
+
+                switch ($respuesta) {
+                    case "200":
+                        echo json_encode(array("mensaje" => "Usuario eliminado correctamente"));
+                        break;
+                    case "400":
+                        echo json_encode(array("mensaje" => "No se ha podido borrar el usuario"));
+                        break;
+                }
+            } catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
+            }
         }
-    }catch(Exception $e){
-        // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
-        http_response_code(401);
-
-        // show error message
-        echo json_encode(array(
-            "message" => 'Acceso denegado',
-            "error" => $e->getMessage()
-        ));
     }
-}
 
+    /**
+     * Actualiza un usuario en la bdd
+     */
+    function update($token)
+    {
+        if ($_SERVER['REQUEST_METHOD'] != 'PUT') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            $json = file_get_contents('php://input');
+
+            // echo $json;
+            $data = json_decode($json, true);
+            if ($data != null && array_key_exists('usuario', $data)) {
+                $usuario = array_key_exists('usuario', $data) ?  $data['usuario'] : '';
+
+                $login = array_key_exists('login', $usuario) ? $usuario['login'] : '';
+
+                if (empty($login)) {
+                    http_response_code(400);
+                    echo json_encode(array("mensaje" => "Faltan datos"));
+                } else {
+
+                    $usuarioActualizado = new Usuario();
+                    $usuarioActualizado->setIdUsuario($usuario['id']);
+                    $usuarioActualizado->setLogin($login);
+                    //  $usuarioActualizado->setPassword($password);
+                    $usuarioActualizado->setRoles($usuario['roles']);
+                    $usuarioActualizado->setEmpresas($usuario['empresas']);
+
+                    try {
+                        //comprobamos que el token esté ok
+                        $decoded = JWT::decode($token, constant('key'), array('HS256'));
+
+                        $usuarioDB = $this->model->updateUser($usuarioActualizado);
+
+                        if ($usuarioDB instanceof Usuario) {
+                            //establecemos el código de estado 200->ok
+                            http_response_code(200);
+                            //formateamos la salida
+                            $salida = [];
+
+                            array_push($salida, ["id" => $usuarioDB->getIdUsuario(), "login" => $usuarioDB->getLogin(), "roles" => $usuarioDB->getRoles(), "empresas" => $usuarioDB->getEmpresas()]);
+
+                            echo json_encode($salida);
+                        } else {
+
+                            http_response_code(500);
+                            echo json_encode(array("mensaje" => "No se ha podido insertar el usuario"));
+                        }
+                    } catch (Exception $e) {
+                        // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                        http_response_code(401);
+
+                        // show error message
+                        echo json_encode(array("message" => 'Acceso denegado', "error" => $e->getMessage()));
+                    }
+                }
+            } else {
+                http_response_code(400);
+                echo json_encode((array("mensaje" => 'Los datos recibidos no tienen el formato correcto.')));
+            }
+        }
+    }
 }

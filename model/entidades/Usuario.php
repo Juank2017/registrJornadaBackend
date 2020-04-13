@@ -16,8 +16,8 @@ class Usuario {
     protected $login;
     protected $password;
     protected $idUsuario;
-    protected $roles;
-    protected $empresas;
+    protected $roles= array();
+    protected $empresas= array();
     function getEmpresas() {
         return $this->empresas;
     }

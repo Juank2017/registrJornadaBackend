@@ -19,13 +19,8 @@ class Notificacion {
     protected $leida;
     protected $idEMPLEADO;
     
-    function __construct($idNotificacion, $fecha, $texto_notificacion, $texto_respuesta, $leida, $idEMPLEADO) {
-        $this->idNotificacion = $idNotificacion;
-        $this->fecha = $fecha;
-        $this->texto_notificacion = $texto_notificacion;
-        $this->texto_respuesta = $texto_respuesta;
-        $this->leida = $leida;
-        $this->idEMPLEADO = $idEMPLEADO;
+    function __construct() {
+ 
     }
     function getIdNotificacion() {
         return $this->idNotificacion;

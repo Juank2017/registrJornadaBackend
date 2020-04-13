@@ -7,5 +7,6 @@
     require 'libs/app.php';
 
     require 'config/config.php';
+   
     $app = new App();
 ?>

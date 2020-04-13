@@ -21,15 +21,10 @@ class Empleado {
     protected $idUsuario;
     protected $idTurno;
     protected $idSede;
+  
     
-    function __construct($idEmpleado, $nombre, $apellidos, $dni, $idUsuario, $idTurno, $idSede) {
-        $this->idEmpleado = $idEmpleado;
-        $this->nombre = $nombre;
-        $this->apellidos = $apellidos;
-        $this->dni = $dni;
-        $this->idUsuario = $idUsuario;
-        $this->idTurno = $idTurno;
-        $this->idSede = $idSede;
+    function __construct() {
+    
     }
 
     function getIdEmpleado() {

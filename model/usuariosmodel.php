@@ -6,6 +6,7 @@
  * and open the template in the editor.
  */
 require 'entidades/usuario.php';
+require 'entidades/Empresa.php';
 
 /**
  * Description of usuariomodel
@@ -50,17 +51,22 @@ class usuariosmodel extends model
                 $query2 = $this->db->connect()->prepare('SELECT empresa.idEMPRESA, empresa.nombre FROM empresa LEFT JOIN usuario_empresa ON usuario_empresa.idEmpresa = empresa.idEMPRESA WHERE usuario_empresa.idUSUARIO = :idUSUARIO');
 
                 $query2->execute(['idUSUARIO' => $user->getIdUsuario()]);
-                $empresas = [];
+             
+                 $empresas =[];
+                 // $query2->fetchAll(PDO::FETCH_CLASS, 'Empresa');
                 while ($row = $query2->fetch(PDO::FETCH_ASSOC)) {
                     $empresa = array("id" => $row['idEMPRESA'], "nombre" => $row['nombre']);
                     array_push($empresas, $empresa);
                 }
+
                 $user->setEmpresas($empresas);
+               // print_r($user->getEmpresas());
                 array_push($usuarios, $user);
             }
             return $usuarios;
         } catch (PDOException $e) {
-            return null;
+            echo($e);
+            return $e;
         }
     }
 
@@ -70,6 +76,7 @@ class usuariosmodel extends model
     function getUserById($id)
     {
         try {
+            
             $query = $this->db->connect()->prepare('SELECT * FROM usuario WHERE idUSUARIO = :idUsuario');
             $query->execute(['idUsuario' => $id]);
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
@@ -110,9 +117,10 @@ class usuariosmodel extends model
         try {
             $query = $this->db->connect()->prepare('SELECT * FROM usuario WHERE login = :login');
             $query->execute(['login' => $login]);
-            $user = new Usuario();
+            $user = null;
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
-              
+               $user= new Usuario();
+
                 $user->setIdUsuario($row['idUSUARIO']);
                 $user->setLogin($row['login']);
                 //obtengo roles
@@ -144,7 +152,7 @@ class usuariosmodel extends model
     /**
      * Inserta u usuario en la bbdd
      */
-    function insertaUsuario($usuario)
+    function createUser($usuario)
     {
         // var_dump( $usuario);
         try {
@@ -157,7 +165,7 @@ class usuariosmodel extends model
                 $queryID->execute();
                 $row = $queryID->fetch();
                 $id = $row[0];
-                echo $id;
+              
                 $roles = $usuario->getRoles();
                 foreach ($roles as $key => $value) {
                     //preparamos consulta para insertar rol
@@ -182,30 +190,63 @@ class usuariosmodel extends model
         }
     }
 
-/**
- * Elimina un usuario de la BBDD
- */
-function eliminaUsuario($id){
-    try {
-        $query = $this->db->connect()->prepare("DELETE FROM usuario WHERE idUSUARIO = :idUsuario ");
-        $query->execute(["idUsuario"=>$id]);
-       if($query->rowCount() > 0 ){
- 
-            return 200;
-       }else{
-  
-            return 400;
-       }
+    /**
+     * Elimina un usuario de la BBDD
+     */
+    function deleteUser($id)
+    {
+        try {
+            $query = $this->db->connect()->prepare("DELETE FROM usuario WHERE idUSUARIO = :idUsuario ");
+            $query->execute(["idUsuario" => $id]);
+            if ($query->rowCount() > 0) {
 
-    }catch(Exception $e){
-return $e;
+                return 200;
+            } else {
+
+                return 400;
+            }
+        } catch (Exception $e) {
+            echo($e);
+            return $e;
+        }
     }
-}
 
-/**
- * Actualiza un usuario en la bbdd
- */
-function actualizar($usuario){
-    
-}
+    /**
+     * Actualiza un usuario en la bbdd
+     */
+    function updateUser($usuario)
+    {
+       
+        try{
+            //actualiza el usuario
+            $query= $this->db->connect()->prepare("UPDATE usuario SET login = :login  WHERE idUSUARIO = :idUsuario");
+            $query->execute(['login'=>$usuario->getLogin(),'idUsuario'=> $usuario->getIdUsuario()]);
+
+            //elimino los roles para insertar los que vienen modificados
+            $queryEliminaRoles= $this->db->connect()->prepare("DELETE FROM usuario_rol  WHERE idUSUARIO = :idUsuario");
+            $queryEliminaRoles->execute(['idUsuario'=>$usuario->getIdUsuario()]);
+            //inserta los roles de nuevo          
+            $roles = $usuario->getRoles();
+            foreach ($roles as $key => $value) {
+                //preparamos consulta para insertar rol
+                $queryRol = $this->db->connect()->prepare("INSERT INTO usuario_rol( idUSUARIO,idROL) VALUES (:idusuario, :idrol)");
+                // var_dump( $value);
+                $idrol = $value['id'];
+               $queryRol->execute(["idusuario" => $usuario->getIdUsuario(), "idrol" => $idrol]);
+            }
+            //elimino empresas
+            $queryEliminaEmpresas= $this->db->connect()->prepare("DELETE FROM usuario_empresa  WHERE idUSUARIO = :idUsuario");
+            $queryEliminaEmpresas->execute(['idUsuario'=>$usuario->getIdUsuario()]);
+            $empresas = $usuario->getEmpresas();
+            foreach ($empresas as $key => $value) {
+                //preparamos consulta para insertar rol
+                $queryEmpresa = $this->db->connect()->prepare("INSERT INTO usuario_empresa( idUSUARIO,idEmpresa) VALUES (:idusuario, :idempresa)");
+                $idEmpresa = $value['id'];
+                $queryEmpresa->execute(["idusuario" => $usuario->getIdUsuario(), "idempresa" => $idEmpresa]);
+            }
+            return $this->getUserById($usuario->getIdUsuario());
+        }catch(PDOException $e){
+            return $e;
+        }
+    }
 }
