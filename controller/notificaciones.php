@@ -36,7 +36,7 @@ class notificaciones extends Controller
      * Obtiene todos los notificaciones
      * GET
      */
-    function index($token)
+    function index($token, $pagina)
     {        //comprueba que sea una petición get
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
@@ -53,10 +53,11 @@ class notificaciones extends Controller
                     http_response_code(200);
                     //formateamos la salida
                     $salida = [];
-                    foreach ($notificaciones as $key => $value) {
+                    array_push($salida,array("paginacion"=>$notificaciones['paginacion']));
+                    foreach ($notificaciones['notificaciones'] as $key => $value) {
                         $empleado = $value->getIdEMPLEADO();
 
-                        array_push($salida, [
+                        array_push($salida,array( [
                             "id" => $value->getIdNotificacion(),
                             "fecha" => $value->getfecha(),
                             "texto_notificacion" => $value->getTexto_notificacion(),
@@ -69,7 +70,7 @@ class notificaciones extends Controller
                             ]
 
 
-                        ]);
+                        ]));
                     }
 
                     echo json_encode($salida);

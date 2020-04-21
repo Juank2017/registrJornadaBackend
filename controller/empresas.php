@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: * ");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST,GET,PUT,DELETE");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -16,7 +16,7 @@ use \Firebase\JWT\JWT;
 
 
 /**
- * Description of usuario
+ * Resuelve las peticiones a la API y devuelve el contenido de la BBDD en formato JSON
  *
  * @author jcpm0
  */
@@ -30,7 +30,7 @@ class empresas extends Controller
     /**
      * Obtiene todos los empresas
      */
-    function index($token)
+    function index($token, $pagina)
     {
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
@@ -39,16 +39,18 @@ class empresas extends Controller
                 //comprobamos que el token esté ok
                 $decoded = JWT::decode($token, constant('key'), array('HS256'));
                 //extraemos los datos del modelo
-                $empresas = $this->model->getEmpresas();
+                $empresas = $this->model->getEmpresas($pagina);
                 if ($empresas != null) {
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
-                    $salida = [];
-                    foreach ($empresas as $key => $value) {
+                    $salida = array("paginacion"=>$empresas['paginacion'],"empresas"=>$empresas['empresas']);
+                    // array_push($salida,array("paginacion"=>$empresas['paginacion']));
+                    // array_push($salida,array("empresas"=>$empresas['empresas']));
+                    // foreach ($empresas['empresas'] as $key => $value) {
 
-                        array_push($salida, ["id" => $value['id'], "nombre" => $value['nombre']]);
-                    }
+                    //     array_push($salida, array('empresas'=>["id" => $value['id'], "nombre" => $value['nombre']]));
+                    // }
                     //a print_r($salida);
                     echo json_encode($salida);
                 } else {
@@ -56,6 +58,14 @@ class empresas extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado empresas"));
                 }
+            } catch (PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -101,6 +111,14 @@ class empresas extends Controller
                 }
 
                 //code...
+            } catch (PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -149,15 +167,31 @@ class empresas extends Controller
                             //establecemos el código de estado 200->ok
                             http_response_code(200);
                             //formateamos la salida
-                            $salida = [];
+                           
 
-                            array_push($salida, ["id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'],"cif"=>$empresaDB['cif']]);
+                           $salida= array( "id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'],"cif"=>$empresaDB['cif']);
                             echo json_encode($salida);
                         } else {
                             //si no existe usuario mando código 404
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar la empresa"));
                         }
+                    }catch (PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
+                    } catch (PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
@@ -201,6 +235,14 @@ class empresas extends Controller
                         echo json_encode(array("mensaje" => "No se ha podido borrar la empresa"));
                         break;
                 }
+            } catch (PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -227,7 +269,7 @@ class empresas extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('rol', $data)) {
+            if ($data != null && array_key_exists('nombre', $data)) {
                 $nombre = array_key_exists('nombre', $data) ?  $data['nombre'] : '';
                 $cif = array_key_exists('cif', $data) ?  $data['cif'] : '';
                 $id = array_key_exists('id', $data) ?  $data['id'] : '';
@@ -259,12 +301,23 @@ class empresas extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido actualizar la empresa"));
                         }
+                    } catch (PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
 
                         // show error message
-                        echo json_encode(array("message" => 'Acceso denegado', "error" => $e->getMessage()));
+                        echo json_encode(array(
+                            "message" => 'Acceso denegado',
+                            "error" => $e->getMessage()
+                        ));
                     }
                 }
             } else {

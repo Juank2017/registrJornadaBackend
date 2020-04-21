@@ -30,7 +30,7 @@ class horarios extends Controller
     /**
      * Obtiene todos los horarios
      */
-    function index($token)
+    function index($token, $pagina)
     {
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
@@ -39,15 +39,17 @@ class horarios extends Controller
                 //comprobamos que el token esté ok
                 $decoded = JWT::decode($token, constant('key'), array('HS256'));
                 //extraemos los datos del modelo
-                $horarios = $this->model->getHorarios();
+                $horarios = $this->model->getHorarios($pagina);
+                
                 if ($horarios != null) {
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
                     $salida = [];
-                    foreach ($horarios as $key => $value) {
+                    array_push($salida,array("paginacion"=>$horarios['paginacion']));
+                    foreach ($horarios['horarios'] as $key => $value) {
 
-                        array_push($salida, ["id" => $value['id'], "hora_entrada" => $value['hora_entrada'],"hora_salida"=>$value['hora_salida'],"idEmpleado"=>$value['idEmpleado']]);
+                        array_push($salida, array("horarios"=>["id" => $value['id'], "hora_entrada" => $value['hora_entrada'],"hora_salida"=>$value['hora_salida'],"idEmpleado"=>$value['idEmpleado']]));
                     }
 
                     //a print_r($salida);}

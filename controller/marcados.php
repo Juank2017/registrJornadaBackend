@@ -36,7 +36,7 @@ class marcados extends Controller
      * Obtiene todos los marcados
      * GET
      */
-    function index($token)
+    function index($token, $pagina)
     {        //comprueba que sea una petición get
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
@@ -46,17 +46,18 @@ class marcados extends Controller
                 //comprobamos que el token esté ok
                 $decoded = JWT::decode($token, constant('key'), array('HS256'));
                 //extraemos los datos del modelo
-                $marcados = $this->model->getMarcados();
+                $marcados = $this->model->getMarcados($pagina);
                 //si vienen datos
                 if ($marcados != null) {
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
                     $salida = [];
-                    foreach ($marcados as $key => $value) {
+                    array_push($salida,array("paginacion"=>$marcados['paginacion']));
+                    foreach ($marcados['marcados'] as $key => $value) {
                         $empleado = $value->getIdEMPLEADO();
                         $tipo_marcaje= $value->getIdTipo_Marcaje();
-                        array_push($salida, [
+                        array_push($salida,array("marcados"=> [
                             "id" => $value->getIdMarcado(),
                             "fecha" => $value->getfecha(),
                             "longitud" => $value->getLongitud(),
@@ -68,7 +69,7 @@ class marcados extends Controller
                             ],
                             "tipo_marcaje" =>$tipo_marcaje
 
-                        ]);
+                        ]));
                     }
 
                     echo json_encode($salida);

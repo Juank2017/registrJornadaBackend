@@ -8,9 +8,9 @@ class App{
        // $url = isset($_GET['url'])? $_GET['url']: null;
         $url = (string)filter_input(INPUT_GET, 'url');
         $token= (string)filter_input(INPUT_GET,'token');
-      
+        $pagina= (string)filter_input(INPUT_GET,'pagina');
         $url = explode('/', rtrim($url, '/'));
-
+       
         if(empty($url[0])){
 //            $archivoController = 'controllers/index.php';
 //            require $archivoController;
@@ -50,7 +50,7 @@ class App{
                 }
             }else{
                 // si se llama a un controlador
-                $controller->index($token);  
+                $controller->index($token,$pagina);  
             }
         }else{
             //$controller = new Errores();

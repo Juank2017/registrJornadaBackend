@@ -24,14 +24,15 @@ class sedesmodel extends model
     /**
      * Obtiene la lita de sedes de la base de datos
      */
-    function getSedes()
+    function getSedes($pagina=0)
     {
-
+        $registrosPorPagina=constant('REG_POR_PAGINA');
+        $registroInicial=($pagina>1)? (($pagina * $registrosPorPagina)- $registrosPorPagina) :0;
 
         try {
-            $query = $this->db->connect()->prepare('SELECT * FROM sede ');
+            $query = $this->db->connect()->prepare('SELECT * FROM sede LIMIT :registroInicial,:registrosPorPagina ');
 
-            $query->execute();
+            $query->execute(['registroInicial'=>$registroInicial,'registrosPorPagina'=>$registrosPorPagina]);
             $sedes = [];
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
                // var_dump($row);
@@ -52,7 +53,11 @@ class sedesmodel extends model
                
                 array_push($sedes, $sede);
             }
-            return $sedes;
+            $totalRegistros=$this->db->connect()->query("SELECT COUNT(*) as total from sede")->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
+            
+            $salida=  array('paginacion'=>array('registros'=>$totalRegistros,'paginas'=>$totalPaginas),'sedes'=>$sedes);
+            return $salida;
         } catch (PDOException $e) {
             echo($e);
             return $e;
@@ -86,7 +91,7 @@ class sedesmodel extends model
             }
             return $sede;
         } catch (PDOException $e) {
-            return null;
+            throw $e;
         }
     }
    
@@ -102,8 +107,8 @@ class sedesmodel extends model
             if ($query->execute(['nombre' => $sede->getNombre(),
                                  'latitud' => $sede->getLatitud(),
                                  'longitud' => $sede->getLongitud(),
-                                 'direcion' => $sede->getDireccion(),
-                                 'idEmpresa' => $sede->getIdEmpresa()]))
+                                 'direccion' => $sede->getDireccion(),
+                                 'idEMPRESA' => $sede->getIdEmpresa()]))
                                   {
                 //si se inserta correcatmente hay que averiguar el id que se le ha asignado para hacer la inserción en las
                 //tablas sede_rol, sede_empresa

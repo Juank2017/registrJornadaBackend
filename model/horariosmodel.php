@@ -11,20 +11,26 @@ class horariosmodel extends model
     /**
      * Obtiene la lita de horarios de la base de datos
      */
-    function getHorarios()
+    function getHorarios($pagina=0)
     {
+        $registrosPorPagina=constant('REG_POR_PAGINA');
+        $registroInicial=($pagina>1)? (($pagina * $registrosPorPagina)- $registrosPorPagina) :0;
 
 
         try {
-            $query = $this->db->connect()->prepare('SELECT * FROM horario ');
+            $query = $this->db->connect()->prepare('SELECT * FROM horario  LIMIT :registroInicial,:registrosPorPagina');
 
-            $query->execute();
+            $query->execute(['registroInicial'=>$registroInicial,'registrosPorPagina'=>$registrosPorPagina]);
             $horarios=[];
             while ($row= $query->fetch(PDO::FETCH_ASSOC)){
                 
                 array_push($horarios,array("id"=>$row['idHORARIO'],"hora_entrada"=>$row['hora_entrada'],"hora_salida"=>$row['hora_salida'],"idEmpleado"=>$row['idEMPLEADO']));
             }
-            return $horarios;
+            $totalRegistros=$this->db->connect()->query("SELECT COUNT(*) as total from horario")->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
+            
+            $salida=  array('paginacion'=>array('total registros'=>$totalRegistros,'paginas'=>$totalPaginas),'horarios'=>$horarios);
+            return $salida;
 
         }catch (PDOException $e) {
             echo($e);

@@ -23,14 +23,15 @@ class usuariosmodel extends model
     /**
      * Obtiene la lita de usuarios de la base de datos
      */
-    function getUsuarios()
+    function getUsuarios($pagina=0)
     {
-
+        $registrosPorPagina=constant('REG_POR_PAGINA');
+        $registroInicial=($pagina>1)? (($pagina * $registrosPorPagina)- $registrosPorPagina) :0;
 
         try {
-            $query = $this->db->connect()->prepare('SELECT * FROM usuario ');
+            $query = $this->db->connect()->prepare('SELECT * FROM usuario LIMIT :registroInicial,:registrosPorPagina ');
 
-            $query->execute();
+            $query->execute(['registroInicial'=>$registroInicial,'registrosPorPagina'=>$registrosPorPagina]);
             $usuarios = [];
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
                 $user = new Usuario();
@@ -63,7 +64,11 @@ class usuariosmodel extends model
                // print_r($user->getEmpresas());
                 array_push($usuarios, $user);
             }
-            return $usuarios;
+            $totalRegistros=$this->db->connect()->query("SELECT COUNT(*) as total from usuario")->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
+            
+            $salida=  array('paginacion'=>array('total registros'=>$totalRegistros,'paginas'=>$totalPaginas),'usuarios'=>$usuarios);
+            return $salida;
         } catch (PDOException $e) {
             echo($e);
             return $e;
@@ -79,6 +84,7 @@ class usuariosmodel extends model
             
             $query = $this->db->connect()->prepare('SELECT * FROM usuario WHERE idUSUARIO = :idUsuario');
             $query->execute(['idUsuario' => $id]);
+            $user=null;
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
                 $user = new Usuario();
                 $user->setIdUsuario($row['idUSUARIO']);
@@ -106,6 +112,7 @@ class usuariosmodel extends model
             }
             return $user;
         } catch (PDOException $e) {
+            echo($e);
             return null;
         }
     }

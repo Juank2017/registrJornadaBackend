@@ -24,14 +24,15 @@ class notificacionesmodel extends model
     /**
      * Obtiene la lita de notificaciones de la base de datos
      */
-    function getNotificaciones()
+    function getNotificaciones($pagina=0)
     {
-
+        $registrosPorPagina=constant('REG_POR_PAGINA');
+        $registroInicial=($pagina>1)? (($pagina * $registrosPorPagina)- $registrosPorPagina) :0;
 
         try {
-            $query = $this->db->connect()->prepare('SELECT * FROM notificacion ');
+            $query = $this->db->connect()->prepare('SELECT * FROM notificacion LIMIT :registroInicial,:registrosPorPagina');
 
-            $query->execute();
+            $query->execute(['registroInicial'=>$registroInicial,'registrosPorPagina'=>$registrosPorPagina]);
             $notificaciones = [];
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
                // var_dump($row);
@@ -51,7 +52,11 @@ class notificacionesmodel extends model
                
                 array_push($notificaciones, $notificacion);
             }
-            return $notificaciones;
+            $totalRegistros=$this->db->connect()->query("SELECT COUNT(*) as total from notificacion")->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
+            
+            $salida=  array('paginacion'=>array('total registros'=>$totalRegistros,'paginas'=>$totalPaginas),'notificaciones'=>$notificaciones);
+            return $salida;
         } catch (PDOException $e) {
             echo($e);
             return $e;

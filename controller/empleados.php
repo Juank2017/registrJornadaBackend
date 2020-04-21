@@ -5,13 +5,7 @@ header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// files for decoding jwt will be here
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 require_once 'config/config.php';
 include_once 'vendor/firebase/php-jwt/src/BeforeValidException.php';
 include_once 'vendor/firebase/php-jwt/src/ExpiredException.php';
@@ -21,7 +15,7 @@ include_once 'vendor/firebase/php-jwt/src/JWT.php';
 use \Firebase\JWT\JWT;
 
 /**
- * Description of empleado
+ * Resuelve las peticiones a la API y devuelve el contenido de la BBDD en formato JSON
  *
  * @author jcpm0
  */
@@ -36,26 +30,31 @@ class empleados extends Controller
      * Obtiene todos los empleados
      * GET
      */
-    function index($token)
+    function index($token, $pagina)
     {        //comprueba que sea una petición get
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
         } else {
-
+            
             try {
                 //comprobamos que el token esté ok
                 $decoded = JWT::decode($token, constant('key'), array('HS256'));
                 //extraemos los datos del modelo
-                $empleados = $this->model->getEmpleados();
+                $empleados = $this->model->getEmpleados($pagina);
                 //si vienen datos
                 if ($empleados != null) {
+               // var_dump($empleados);
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
                     $salida = [];
-                    foreach ($empleados as $key => $value) {
+                    $empl = [];
+                    array_push($salida,array("paginacion"=>$empleados['paginacion']));
+                    foreach ($empleados['empleados'] as $key => $value) {
+                        //var_dump($value);
                         $usuario = $value->getIdUsuario();
-                        array_push($salida, [
+                        $sede = $value->getIdSede();
+                        array_push($empl, [
                             "id" => $value->getIdEmpleado(),
                             "nombre" => $value->getNombre(),
                             "apellidos" => $value->getApellidos(),
@@ -67,10 +66,14 @@ class empleados extends Controller
                                 'empresas' => $usuario->getEmpresas()
                             ],
                             "turno" => $value->getIdTurno(),
-                            "sede" => $value->getIdSede()
+                            "sede" => [
+                                'id' => $sede->getIdSede(),
+                                'nombre' => $sede->getNombre(),
+                                
+                            ]
                         ]);
                     }
-
+                    $salida=array("paginacion"=>$empleados['paginacion'],'empleados'=> $empl);
                     echo json_encode($salida);
                 } else {
                     //si no hay empleados mando código 404
@@ -81,7 +84,76 @@ class empleados extends Controller
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
-                // show error message
+                
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
+            }
+        }
+    }
+
+ /**
+     * Obtiene un empleado por id
+     * GET
+     */
+    function empresa($token, $param = [])
+    {    //comprueba que sea una petición get
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            $pagina= (string)filter_input(INPUT_GET,'pagina');
+            //obtengo el id que viene en el array $param
+            $id = count($param) > 0 ? $param[0] : "";
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //obtengo el empleado
+                $empleados = $this->model->getEmpleadosByEmpresaId($pagina,$id);
+
+                if ($empleados != null) {
+                   //establecemos el código de estado 200->ok
+                   http_response_code(200);
+                   //formateamos la salida
+                   $salida = [];
+                   $empl = [];
+                   array_push($salida,array("paginacion"=>$empleados['paginacion']));
+                   foreach ($empleados['empleados'] as $key => $value) {
+                       //var_dump($value);
+                       $usuario = $value->getIdUsuario();
+                     //  var_dump($usuario);
+                       $sede = $value->getIdSede();
+                       array_push($empl, [
+                           "id" => $value->getIdEmpleado(),
+                           "nombre" => $value->getNombre(),
+                           "apellidos" => $value->getApellidos(),
+                           "dni" => $value->getDni(),
+                           "usuario" => [
+                               'id' => $usuario->getIdUsuario(),
+                               'login' => $usuario->getLogin(),
+                               'roles' => $usuario->getRoles(),
+                               'empresas' => $usuario->getEmpresas()
+                           ],
+                           "turno" => $value->getIdTurno(),
+                           "sede" => [
+                               'id' => $sede->getIdSede(),
+                               'nombre' => $sede->getNombre(),
+                               
+                           ]
+                       ]);
+                   }
+                   $salida=array("paginacion"=>$empleados['paginacion'],'empleados'=> $empl);
+                   echo json_encode($salida);
+                } else {
+                    //si no existe empleado mando código 404
+                    http_response_code(404);
+                    echo json_encode(array("mensaje" => "No se han encontrado el empleado"));
+                }
+            } catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                
                 echo json_encode(array(
                     "message" => 'Acceso denegado',
                     "error" => $e->getMessage()
@@ -139,7 +211,7 @@ class empleados extends Controller
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
-                // show error message
+                
                 echo json_encode(array(
                     "message" => 'Acceso denegado',
                     "error" => $e->getMessage()

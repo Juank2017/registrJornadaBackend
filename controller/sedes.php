@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: * ");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST,PUT");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -36,7 +36,7 @@ class sedes extends Controller
      * Obtiene todos los sedes
      * GET
      */
-    function index($token)
+    function index($token, $pagina)
     {        //comprueba que sea una petición get
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
@@ -46,18 +46,20 @@ class sedes extends Controller
                 //comprobamos que el token esté ok
                 $decoded = JWT::decode($token, constant('key'), array('HS256'));
                 //extraemos los datos del modelo
-                $sedes = $this->model->getSedes();
+                $sedes = $this->model->getSedes($pagina);
                 //si vienen datos
                 if ($sedes != null) {
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
-                    $salida = [];
-                    foreach ($sedes as $key => $value) {
+                    $sedes1=[];
+                   
+                    foreach ($sedes['sedes'] as $key => $value) {
                         $empresa = $value->getIdEmpresa();
-                        array_push($salida, [
+                        array_push($sedes1,array(
                             "id" => $value->getIdSede(),
                             "nombre" => $value->getNombre(),
+                            "direccion" => $value->getDireccion(),
                             "longitud" => $value->getLongitud(),
                             "latitud" => $value->getLatitud(),
                             "empresa" => [
@@ -66,16 +68,26 @@ class sedes extends Controller
                                 'cif' => $empresa['cif']
                             ]
 
-                        ]);
+                        ));
                     }
-
+                    
+                    $salida=array("paginacion"=>$sedes['paginacion'],'sedes'=> $sedes1);
                     echo json_encode($salida);
                 } else {
                     //si no hay sedes mando código 404
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado sedes"));
                 }
-            } catch (Exception $e) {
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }
+            catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -109,11 +121,12 @@ class sedes extends Controller
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
-                    $salida = [];
+                    
                     $empresa = $sedeDB->getIdEmpresa();
-                    array_push($salida, [
+                    $salida= array('sede'=> [
                         "id" => $sedeDB->getIdSede(),
                         "nombre" => $sedeDB->getNombre(),
+                        "direccion" => $sedeDB->getDireccion(),
                         "longitud" => $sedeDB->getLongitud(),
                         "latitud" => $sedeDB->getLatitud(),
                         "empresa" => [
@@ -130,7 +143,16 @@ class sedes extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado la sede"));
                 }
-            } catch (Exception $e) {
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }
+             catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -158,14 +180,15 @@ class sedes extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('sede', $data)) {
-                $sede = array_key_exists('sede', $data) ?  $data['sede'] : '';
+            if ($data != null && array_key_exists('longitud', $data)) {
+                $empresa = array_key_exists('empresa', $data) ?  $data['empresa'] : '';
 
-                $nombre = array_key_exists('nombre', $sede) ? $sede['nombre'] : '';
-                $longitud = array_key_exists('longitud', $sede) ? $sede['longitud'] : '';
-                $latitud = array_key_exists('latitud', $sede) ? $sede['latitud'] : '';
-                $direccion = array_key_exists('direccion', $sede) ? $sede['direccion'] : '';
-                $idEmpresa = array_key_exists('idEmpresa', $sede) ? $sede['idEmpresa'] : '';
+                $nombre = array_key_exists('nombre', $data) ? $data['nombre'] : '';
+                $longitud = array_key_exists('longitud', $data) ? $data['longitud'] : '';
+                $latitud = array_key_exists('latitud', $data) ? $data['latitud'] : '';
+                $direccion = array_key_exists('direccion', $data) ? $data['direccion'] : '';
+                $idEmpresa = array_key_exists('id', $empresa) ? $empresa['id'] : '';
+            
                 
                 if (empty($nombre) || empty($longitud) || empty($latitud) || empty($direccion) || empty($idEmpresa)) {
                     http_response_code(400);
@@ -215,7 +238,16 @@ class sedes extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar el sede"));
                         }
-                    } catch (Exception $e) {
+                    }catch(PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
+                    }
+                     catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
 
@@ -259,7 +291,16 @@ class sedes extends Controller
                         echo json_encode(array("mensaje" => "No se ha podido borrar el sede"));
                         break;
                 }
-            } catch (Exception $e) {
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }
+             catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -283,14 +324,16 @@ class sedes extends Controller
             $json = file_get_contents('php://input');
 
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('sede', $data)) {
-                $sede = array_key_exists('sede', $data) ?  $data['sede'] : '';
-                $idSede= array_key_exists('idSede', $sede) ? $sede['idSede'] : '';
-                $nombre = array_key_exists('nombre', $sede) ? $sede['nombre'] : '';
-                $longitud = array_key_exists('longitud', $sede) ? $sede['longitud'] : '';
-                $latitud = array_key_exists('latitud', $sede) ? $sede['latitud'] : '';
-                $direccion = array_key_exists('direccion', $sede) ? $sede['direcion'] : '';
-                $idEmpresa = array_key_exists('idEmpresa', $sede) ? $sede['idEmpresa'] : '';
+            if ($data != null && array_key_exists('longitud', $data)) {
+              
+                $idSede= array_key_exists('id', $data) ? $data['id'] : '';
+                $empresa = array_key_exists('empresa', $data) ?  $data['empresa'] : '';
+
+                $nombre = array_key_exists('nombre', $data) ? $data['nombre'] : '';
+                $longitud = array_key_exists('longitud', $data) ? $data['longitud'] : '';
+                $latitud = array_key_exists('latitud', $data) ? $data['latitud'] : '';
+                $direccion = array_key_exists('direccion', $data) ? $data['direccion'] : '';
+                $idEmpresa = array_key_exists('id', $empresa) ? $empresa['id'] : '';
                 
                 if (empty('idSede') || empty($nombre) || empty($longitud) || empty($latitud) || empty($direccion) || empty($idEmpresa)) {
                     http_response_code(400);
@@ -340,7 +383,16 @@ class sedes extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar la sede"));
                         }
-                    } catch (Exception $e) {
+                    }catch(PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
+                    }
+                    catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
 

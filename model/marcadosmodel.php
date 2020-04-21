@@ -24,14 +24,15 @@ class marcadosmodel extends model
     /**
      * Obtiene la lita de marcados de la base de datos
      */
-    function getMarcados()
+    function getMarcados($pagina=0)
     {
-
+        $registrosPorPagina=constant('REG_POR_PAGINA');
+        $registroInicial=($pagina>1)? (($pagina * $registrosPorPagina)- $registrosPorPagina) :0;
 
         try {
-            $query = $this->db->connect()->prepare('SELECT * FROM marcado ');
+            $query = $this->db->connect()->prepare('SELECT * FROM marcado LIMIT :registroInicial,:registrosPorPagina');
 
-            $query->execute();
+            $query->execute(['registroInicial'=>$registroInicial,'registrosPorPagina'=>$registrosPorPagina]);
             $marcados = [];
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
                // var_dump($row);
@@ -56,7 +57,10 @@ class marcadosmodel extends model
                
                 array_push($marcados, $marcado);
             }
-            return $marcados;
+            $totalRegistros=$this->db->connect()->query("SELECT COUNT(*) as total from marcado")->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
+            $salida=  array('paginacion'=>array('total registros'=>$totalRegistros,'paginas'=>$totalPaginas),'marcados'=>$marcados);
+            return $salida;
         } catch (PDOException $e) {
             echo($e);
             return $e;

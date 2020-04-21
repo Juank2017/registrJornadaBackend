@@ -1,5 +1,9 @@
 <?php
-
+header("Access-Control-Allow-Origin: * ");
+header("Content-Type: application/x-www-form-urlencoded");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -34,14 +38,17 @@ class login extends controller
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
         } else {
-
+            $json = file_get_contents('php://input');
+          //  var_dump($json);
+            $array = json_decode($json );
+          //  var_dump( $array);
             //Extrae los datos que vengan en la petición.
-            $login = (string) filter_input(INPUT_POST, 'login');
-            $password = (string) filter_input(INPUT_POST, 'password');
+            $login = $array->login;
+            $password = $array->password;
             //si alguno viene vacio devulve bad request con un mensaje
             if (empty($login) || empty($password)) {
                 http_response_code(400);
-                echo json_encode(array("mensaje" => "falta alguno de los campos en el body"));
+                echo json_encode(array("mensaje" => "falta alguno de los campos en el body",'post'=>$_POST));
             } else {
                 //obtiene el usuario
                 $user = $this->model->getUsuario($login, $password);
@@ -76,9 +83,11 @@ class login extends controller
 
                     switch ($user) {
                         case "401":
+                            http_response_code(401);
                             echo json_encode(array("mensaje" => 'Acceso denegado. Password incorrecto'));
                             break;
                         case "404":
+                            http_response_code(404);
                             echo json_encode(array("mensaje" => 'Usuario no encontrado.'));
                             break;
                     }

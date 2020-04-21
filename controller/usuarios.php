@@ -36,7 +36,7 @@ class usuarios extends Controller
      * Obtiene todos los usuarios
      * GET
      */
-    function index($token)
+    function index($token, $pagina)
     {        //comprueba que sea una petición get
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
@@ -46,14 +46,15 @@ class usuarios extends Controller
                 //comprobamos que el token esté ok
                 $decoded = JWT::decode($token, constant('key'), array('HS256'));
                 //extraemos los datos del modelo
-                $usuarios = $this->model->getUsuarios();
+                $usuarios = $this->model->getUsuarios($pagina);
                 //si vienen datos
                 if ($usuarios != null) {
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
                     $salida = [];
-                    foreach ($usuarios as $key => $value) {
+                    array_push($salida,array("paginacion"=>$usuarios['paginacion']));
+                    foreach ($usuarios['usuarios'] as $key => $value) {
 
                         array_push($salida, ["id" => $value->getIdUsuario(), "login" => $value->getLogin(), "roles" => $value->getRoles(), "empresas" => $value->getEmpresas()]);
                     }
@@ -291,7 +292,7 @@ class usuarios extends Controller
                         } else {
 
                             http_response_code(500);
-                            echo json_encode(array("mensaje" => "No se ha podido insertar el usuario"));
+                            echo json_encode(array("mensaje" => "No se ha podido actualizar el usuario"));
                         }
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado

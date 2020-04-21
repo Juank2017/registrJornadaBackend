@@ -11,24 +11,38 @@ class empresasmodel extends model
     /**
      * Obtiene la lita de empresas de la base de datos
      */
-    function getEmpresas()
+    function getEmpresas($pagina)
     {
-
-
+       
+        $registrosPorPagina=constant('REG_POR_PAGINA');
         try {
-            $query = $this->db->connect()->prepare('SELECT * FROM empresa ');
+            if ($pagina != '-1'){
+              
+                $registroInicial=($pagina>1)? (($pagina * $registrosPorPagina)- $registrosPorPagina) :0;
+                $query = $this->db->connect()->prepare('SELECT * FROM empresa LIMIT :registroInicial,:registrosPorPagina');
+    
+                $query->execute(['registroInicial'=>$registroInicial,'registrosPorPagina'=>$registrosPorPagina]);
+            }else{
+                $query = $this->db->connect()->prepare('SELECT * FROM empresa ');
+    
+                $query->execute();
+            }
 
-            $query->execute();
             $empresas=[];
             while ($row= $query->fetch(PDO::FETCH_ASSOC)){
                 
                 array_push($empresas,array("id"=>$row['idEMPRESA'],"nombre"=>$row['nombre'],"cif"=>$row['cif']));
             }
-            return $empresas;
+
+            $totalRegistros=$this->db->connect()->query("SELECT COUNT(*) as total from empresa")->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
+            
+            $salida=  array('paginacion'=>array('registros'=>$totalRegistros,'paginas'=>$totalPaginas),'empresas'=>$empresas);
+            return $salida;
 
         }catch (PDOException $e) {
-            echo($e);
-            return $e;
+            
+            throw $e;
         }
 
     }
@@ -45,7 +59,7 @@ class empresasmodel extends model
             }
             return $empresa;
         } catch (PDOException $e) {
-            return null;
+            throw $e;
         }
     }
 
@@ -70,7 +84,7 @@ class empresasmodel extends model
                 return null;
             }
         } catch (PDOException $e) {
-            return $e;
+            throw $e;
         }
     }
 
@@ -89,7 +103,7 @@ class empresasmodel extends model
                 return 400;
             }
         } catch (Exception $e) {
-            return $e;
+            throw $e;
         }
     }
 
@@ -106,7 +120,7 @@ class empresasmodel extends model
            
             return $this->getEmpresaById($id);
         }catch(PDOException $e){
-            return null;
+            throw $e;
         }
     }
 }
