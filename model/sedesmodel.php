@@ -63,7 +63,46 @@ class sedesmodel extends model
             return $e;
         }
     }
+/**
+     * Obtiene la lita de sedes de una empresa dada
+     */
+    function getSedesByEmpresaId($idEmpresa)
+    {
+       
 
+        try {
+            $query = $this->db->connect()->prepare('SELECT * FROM sede WHERE idEMPRESA = :idEmpresa ');
+
+            $query->execute(['idEmpresa'=>$idEmpresa]);
+            $sedes = [];
+            while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+               // var_dump($row);
+                $sede= new Sede();
+
+                $sede->setIdSede($row['idSEDE']);
+                $sede->setNombre($row['nombre']);
+                $sede->setLongitud($row['longitud']);
+                $sede->setLatitud($row['latitud']);
+                $sede->setDireccion($row['direccion']);
+              
+                
+                $empresas = new empresasmodel;
+                $empresa= $empresas->getEmpresaById($row['idEMPRESA']);
+ 
+               
+                $sede->setIdEMPRESA($empresa);
+               
+                array_push($sedes, $sede);
+            }
+            
+            
+           
+            return $sedes;
+        } catch (PDOException $e) {
+            echo($e);
+            return $e;
+        }
+    }
     /**
      * Obtiene un sede por su id
      */

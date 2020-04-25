@@ -161,6 +161,7 @@ class empleadosmodel extends model
      */
     function getEmpleadoById($id)
     {
+        $empleado = null;
         try {
             $query = $this->db->connect()->prepare('SELECT * FROM empleado WHERE idEMPLEADO = :idEmpleado');
             $query->execute(['idEmpleado' => $id]);
@@ -172,20 +173,24 @@ class empleadosmodel extends model
                 $empleado->setNombre($row['nombre']);
                 $empleado->setApellidos($row['apellidos']);
                 $empleado->setDni($row['dni']);
-
+               
                 $turnos = new turnosmodel;
                 $turno = $turnos->getTurnoById($row['idTURNO']);
 
                 $usuarios = new usuariosmodel;
                 $usuario = $usuarios->getUserById($row['idUSUARIO']);
+                $sedes = new sedesmodel;
+                $sede = $sedes->getSedeById($row['idSEDE']);
 
+                $empleado->setIdSede($sede);
 
                 $empleado->setIdTurno($turno);
                 $empleado->setIdUsuario($usuario);
+                
             }
             return $empleado;
         } catch (PDOException $e) {
-            return null;
+            throw $e;
         }
     }
     /**
@@ -259,7 +264,7 @@ class empleadosmodel extends model
     function deleteEmpleado($id)
     {
         try {
-            $query = $this->db->connect()->prepare("DELETE FROM empleado WHERE idEMPLEADO = :idEmpleado ");
+            $query = $this->db->connect()->prepare("DELETE e,u FROM empleado AS e JOIN usuario as u WHERE e.idEMPLEADO = :idEmpleado AND e.idUSUARIO = u.idUSUARIO  ");
             $query->execute(["idEmpleado" => $id]);
             if ($query->rowCount() > 0) {
 
@@ -279,23 +284,24 @@ class empleadosmodel extends model
      */
     function updateEmpleado($empleado)
     {
-
+     //   var_dump($empleado);
         try {
             //actualiza el empleado
             $query = $this->db->connect()->prepare("UPDATE empleado SET nombre = :nombre, apellidos = :apellidos, dni = :dni, idTURNO = :idTurno, idSEDE = :idSede  WHERE idEMPLEADO = :idEmpleado");
             $query->execute([
                 'idEmpleado' => $empleado->getIdEmpleado(),
                 'nombre' => $empleado->getNombre(),
-                'apellidos' => $empleado->getEmpleados(),
+                'apellidos' => $empleado->getApellidos(),
                 'dni' => $empleado->getDni(),
                 'idTurno' => $empleado->getIdTurno(),
                 'idSede' => $empleado->getIdSede()
             ]);
 
-
-            return $this->getEmpleadoById($empleado->getIdEmpleado());
+            $actualizado =$this->getEmpleadoById($empleado->getIdEmpleado());
+        //    var_dump($actualizado);
+            return $actualizado;
         } catch (PDOException $e) {
-            return $e;
+           throw $e;
         }
     }
 }

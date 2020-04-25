@@ -89,6 +89,7 @@ class usuariosmodel extends model
                 $user = new Usuario();
                 $user->setIdUsuario($row['idUSUARIO']);
                 $user->setLogin($row['login']);
+                $user->setPassword($row['password']);
                 //obtengo roles
                 $query1 = $this->db->connect()->prepare('SELECT rol.rol, rol.idROL, usuario_rol.idUSUARIO FROM rol LEFT JOIN usuario_rol ON usuario_rol.idROL = rol.idROL WHERE usuario_rol.idUSUARIO = :idUSUARIO');
 
@@ -193,7 +194,7 @@ class usuariosmodel extends model
                 return null;
             }
         } catch (PDOException $e) {
-            return $e;
+           throw $e;
         }
     }
 

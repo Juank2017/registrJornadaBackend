@@ -165,6 +165,74 @@ class sedes extends Controller
         }
     }
 
+    /**
+     * Obtiene un sede por id de empresa
+     * GET
+     */
+    function empresa($token, $param = [])
+    {    //comprueba que sea una petición get
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            //obtengo el id que viene en el array $param
+            $id = count($param) > 0 ? $param[0] : "";
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //obtengo el sede
+                $sedes = $this->model->getSedesByEmpresaId($id);
+
+                if ($sedes != null) {
+                   //establecemos el código de estado 200->ok
+                   http_response_code(200);
+                   //formateamos la salida
+                   $sedes1=[];
+                  
+                   foreach ($sedes as $key => $value) {
+                       $empresa = $value->getIdEmpresa();
+                       array_push($sedes1,array(
+                           "id" => $value->getIdSede(),
+                           "nombre" => $value->getNombre(),
+                           "direccion" => $value->getDireccion(),
+                           "longitud" => $value->getLongitud(),
+                           "latitud" => $value->getLatitud(),
+                           "empresa" => [
+                               'id' => $empresa['id'],
+                               'nombre' => $empresa['nombre'],
+                               'cif' => $empresa['cif']
+                           ]
+
+                       ));
+                   }
+                   
+                   
+                   echo json_encode($sedes1);
+                } else {
+                    //si no existe sede mando código 404
+                    http_response_code(404);
+                    echo json_encode(array("mensaje" => "No se han encontrado la sede"));
+                }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }
+             catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
+            }
+        }
+    }
    
 
     /**

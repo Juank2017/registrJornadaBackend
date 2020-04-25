@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: * ");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST,PUT,GET,DELETE");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -65,6 +65,14 @@ class usuarios extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado usuarios"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -109,7 +117,15 @@ class usuarios extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado el usuario"));
                 }
-            } catch (Exception $e) {
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -135,11 +151,11 @@ class usuarios extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('usuario', $data)) {
-                $usuario = array_key_exists('usuario', $data) ?  $data['usuario'] : '';
+            if ($data != null && array_key_exists('login', $data)) {
+               // $usuario = array_key_exists('usuario', $data) ?  $data['usuario'] : '';
 
-                $login = array_key_exists('login', $usuario) ? $usuario['login'] : '';
-                $password = array_key_exists('password', $usuario) ? password_hash($usuario['password'], PASSWORD_DEFAULT) : '';
+                $login = array_key_exists('login', $data) ? $data['login'] : '';
+                $password = array_key_exists('password', $data) ? password_hash($data['password'], PASSWORD_DEFAULT) : '';
                 if (empty($login) || empty($password)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
@@ -149,8 +165,8 @@ class usuarios extends Controller
                     $nuevoUsuario = new Usuario();
                     $nuevoUsuario->setLogin($login);
                     $nuevoUsuario->setPassword($password);
-                    $nuevoUsuario->setRoles($usuario['roles']);
-                    $nuevoUsuario->setEmpresas($usuario['empresas']);
+                    $nuevoUsuario->setRoles($data['roles']);
+                    $nuevoUsuario->setEmpresas($data['empresas']);
 
 
                     try {
@@ -169,9 +185,9 @@ class usuarios extends Controller
                                 //establecemos el código de estado 200->ok
                                 http_response_code(200);
                                 //formateamos la salida
-                                $salida = [];
+                                
 
-                                array_push($salida, ["id" => $usuarioDB->getIdUsuario(), "login" => $usuarioDB->getLogin(), "roles" => $usuarioDB->getRoles(), "empresas" => $usuarioDB->getEmpresas()]);
+                                $salida =  ["id" => $usuarioDB->getIdUsuario(), "login" => $usuarioDB->getLogin(), "roles" => $usuarioDB->getRoles(), "empresas" => $usuarioDB->getEmpresas()];
 
                                 echo json_encode($salida);
                             } else {
@@ -188,7 +204,15 @@ class usuarios extends Controller
                                 "message" => 'El login ya existe.'
                             ));
                         }
-                    } catch (Exception $e) {
+                    } catch(PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
+                    }catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
 
@@ -232,7 +256,15 @@ class usuarios extends Controller
                         echo json_encode(array("mensaje" => "No se ha podido borrar el usuario"));
                         break;
                 }
-            } catch (Exception $e) {
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -257,22 +289,23 @@ class usuarios extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('usuario', $data)) {
-                $usuario = array_key_exists('usuario', $data) ?  $data['usuario'] : '';
+            if ($data != null && array_key_exists('login', $data)) {
+               // $usuario = array_key_exists('usuario', $data) ?  $data['usuario'] : '';
 
-                $login = array_key_exists('login', $usuario) ? $usuario['login'] : '';
-
+                $login = array_key_exists('login', $data) ? $data['login'] : '';
+                $roles =array_key_exists('roles', $data) ? $data['roles'] : '';
+                $empresas = array_key_exists('empresas', $data) ? $data['empresas'] : '';
                 if (empty($login)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
                 } else {
 
                     $usuarioActualizado = new Usuario();
-                    $usuarioActualizado->setIdUsuario($usuario['id']);
+                    $usuarioActualizado->setIdUsuario($data['idUSUARIO']);
                     $usuarioActualizado->setLogin($login);
-                    //  $usuarioActualizado->setPassword($password);
-                    $usuarioActualizado->setRoles($usuario['roles']);
-                    $usuarioActualizado->setEmpresas($usuario['empresas']);
+                    $usuarioActualizado->setPassword($data['password']);
+                    $usuarioActualizado->setRoles($roles);
+                    $usuarioActualizado->setEmpresas($empresas);
 
                     try {
                         //comprobamos que el token esté ok
@@ -294,7 +327,15 @@ class usuarios extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido actualizar el usuario"));
                         }
-                    } catch (Exception $e) {
+                    } catch(PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
+                    }catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
 

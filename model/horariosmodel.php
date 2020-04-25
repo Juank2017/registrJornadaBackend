@@ -56,6 +56,25 @@ class horariosmodel extends model
     }
 
     /**
+     * Obitne los horarios de un empleado por el id de empleado
+     */
+    function getHorarioByEmpleadoId($id){
+        try {
+            $query= $this->db->connect()->prepare("SELECT * FROM horario WHERE idEMPLEADO = :id");
+            $query->execute(["id"=>$id]);
+
+            $horarios=[];
+            while ($row= $query->fetch(PDO::FETCH_ASSOC)){
+                
+                array_push($horarios,array("id"=>$row['idHORARIO'],"hora_entrada"=>$row['hora_entrada'],"hora_salida"=>$row['hora_salida'],"idEmpleado"=>$row['idEMPLEADO']));
+            }
+            return $horarios;
+        } catch (PDOException $e) {
+            return null;
+        }
+    }
+
+    /**
      * Crea un rol en la bbdd
      */
     function createHorario($hora_entrada,$hora_salida,$idEMPLEADO){

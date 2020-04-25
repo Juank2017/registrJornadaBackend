@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: * ");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST,GET,PUT,DELETE");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -80,6 +80,14 @@ class empleados extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado empleados"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -149,6 +157,14 @@ class empleados extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado el empleado"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -185,21 +201,25 @@ class empleados extends Controller
                     //formateamos la salida
                     $salida = [];
                     $usuario = $empleadoDB->getIdUsuario();
-
-                    array_push($salida, [
+                    $sede = $empleadoDB->getIdSede();
+                   $salida = array( 
                         "id" => $empleadoDB->getIdEmpleado(),
                         "nombre" => $empleadoDB->getNombre(),
                         "apellidos" => $empleadoDB->getApellidos(),
                         "dni" => $empleadoDB->getDni(),
-                        "empleado" => [
-                            'id' => $usuario->getIdUsuario(),
+                        "usuario" => [
+                            'idUSUARIO' => $usuario->getIdUsuario(),
                             'login' => $usuario->getLogin(),
+                            'password' =>$usuario->getPassword(),
                             'roles' => $usuario->getRoles(),
                             'empresas' => $usuario->getEmpresas()
                         ],
                         "turno" => $empleadoDB->getIdTurno(),
-                        "sede" => $empleadoDB->getIdSede()
-                    ]);
+                        "sede" => [
+                            'id' => $sede->getIdSEDE(),
+                            'nombre'=> $sede->getNombre()
+                        ]
+                    );
 
                     echo json_encode($salida);
                 } else {
@@ -207,6 +227,14 @@ class empleados extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado el empleado"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -246,7 +274,15 @@ class empleados extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado el empleado"));
                 }
-            } catch (Exception $e) {
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -272,15 +308,17 @@ class empleados extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('empleado', $data)) {
-                $empleado = array_key_exists('empleado', $data) ?  $data['empleado'] : '';
-
-                $nombre = array_key_exists('nombre', $empleado) ? $empleado['nombre'] : '';
-                $apellidos = array_key_exists('apellidos', $empleado) ? $empleado['apellidos'] : '';
-                $dni = array_key_exists('dni', $empleado) ? $empleado['dni'] : '';
-                $idUsuario = array_key_exists('idUsuario', $empleado) ? $empleado['idUsuario'] : '';
-                $idTurno = array_key_exists('idTurno', $empleado) ? $empleado['idTurno'] : '';
-                $idSede = array_key_exists('idSede', $empleado) ? $empleado['idSede'] : '';
+            if ($data != null && array_key_exists('nombre', $data)) {
+               // $empleado = array_key_exists('empleado', $data) ?  $data['empleado'] : '';
+                $usuarioURL = $data['usuario'];
+                $turno= $data['turno'];
+                $sede= $data['sede'];
+                $nombre = array_key_exists('nombre', $data) ? $data['nombre'] : '';
+                $apellidos = array_key_exists('apellidos', $data) ? $data['apellidos'] : '';
+                $dni = array_key_exists('dni', $data) ? $data['dni'] : '';
+                $idUsuario = array_key_exists('idUSUARIO', $usuarioURL) ? $usuarioURL['idUSUARIO'] : '';
+                $idTurno = array_key_exists('id', $turno) ? $turno['id'] : '';
+                $idSede = array_key_exists('id', $sede) ? $sede['id'] : '';
                 if (empty($nombre) || empty($apellidos) || empty($dni) || empty($idUsuario) || empty($idTurno) || empty($idSede)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
@@ -311,7 +349,7 @@ class empleados extends Controller
                             $salida = [];
                             $usuario = $empleadoDB->getIdUsuario();
 
-                            array_push($salida, [
+                            array_push($salida, array(
                                 "id" => $empleadoDB->getIdEmpleado(),
                                 "nombre" => $empleadoDB->getNombre(),
                                 "apellidos" => $empleadoDB->getApellidos(),
@@ -324,7 +362,7 @@ class empleados extends Controller
                                 ],
                                 "turno" => $empleadoDB->getIdTurno(),
                                 "sede" => $empleadoDB->getIdSede()
-                            ]);
+                            ));
 
                             echo json_encode($salida);
                         } else {
@@ -332,6 +370,14 @@ class empleados extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar el empleado"));
                         }
+                    }catch(PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
@@ -376,7 +422,15 @@ class empleados extends Controller
                         echo json_encode(array("mensaje" => "No se ha podido borrar el empleado"));
                         break;
                 }
-            } catch (Exception $e) {
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -400,21 +454,23 @@ class empleados extends Controller
             $json = file_get_contents('php://input');
 
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('empleado', $data)) {
-                $empleado = array_key_exists('empleado', $data) ?  $data['empleado'] : '';
-
-                $nombre = array_key_exists('nombre', $empleado) ? $empleado['nombre'] : '';
-                $apellidos = array_key_exists('apellidos', $empleado) ? $empleado['apellidos'] : '';
-                $dni = array_key_exists('dni', $empleado) ? $empleado['dni'] : '';
+            if ($data != null && array_key_exists('id', $data)) {
+                $idEmpleado = array_key_exists('id', $data) ?  $data['id'] : '';
+                $turno = array_key_exists('turno', $data) ?  $data['turno'] : '';
+                $sede = array_key_exists('sede', $data) ?  $data['sede'] : '';
+                $nombre = array_key_exists('nombre', $data) ? $data['nombre'] : '';
+                $apellidos = array_key_exists('apellidos', $data) ? $data['apellidos'] : '';
+                $dni = array_key_exists('dni', $data) ? $data['dni'] : '';
                
-                $idTurno = array_key_exists('idTurno', $empleado) ? $empleado['idTurno'] : '';
-                $idSede = array_key_exists('idSede', $empleado) ? $empleado['idSede'] : '';
+                $idTurno = array_key_exists('id', $turno) ? $turno['id'] : '';
+                $idSede = array_key_exists('id', $sede) ? $sede['id'] : '';
                 if (empty($nombre) || empty($apellidos) || empty($dni) || empty($idTurno) || empty($idSede)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
                 } else {
 
                     $empleadoActualizado = new Empleado;
+                    $empleadoActualizado->setIdEmpleado($idEmpleado);
                     $empleadoActualizado->setNombre($nombre);
                     $empleadoActualizado->setApellidos($apellidos);
                     $empleadoActualizado->setDni($dni);
@@ -426,7 +482,7 @@ class empleados extends Controller
                         //comprobamos que el token esté ok
                         $decoded = JWT::decode($token, constant('key'), array('HS256'));
 
-                        $empleadoDB = $this->model->updateUser($empleadoActualizado);
+                        $empleadoDB = $this->model->updateEmpleado($empleadoActualizado);
 
                         if ($empleadoDB instanceof Empleado) {
                             //establecemos el código de estado 200->ok
@@ -437,12 +493,12 @@ class empleados extends Controller
                             $salida = [];
                             $usuario = $empleadoDB->getIdUsuario();
 
-                            array_push($salida, [
+                            $salida = [
                                 "id" => $empleadoDB->getIdEmpleado(),
                                 "nombre" => $empleadoDB->getNombre(),
                                 "apellidos" => $empleadoDB->getApellidos(),
                                 "dni" => $empleadoDB->getDni(),
-                                "empleado" => [
+                                "usuario" => [
                                     'id' => $usuario->getIdUsuario(),
                                     'login' => $usuario->getLogin(),
                                     'roles' => $usuario->getRoles(),
@@ -450,14 +506,22 @@ class empleados extends Controller
                                 ],
                                 "turno" => $empleadoDB->getIdTurno(),
                                 "sede" => $empleadoDB->getIdSede()
-                            ]);
+                            ];
 
                             echo json_encode($salida);
                         } else {
 
                             http_response_code(500);
-                            echo json_encode(array("mensaje" => "No se ha podido insertar el empleado"));
+                            echo json_encode(array("mensaje" => "No se ha podido insertar el empleado","empleadobd"=>$empleadoDB));
                         }
+                    }catch(PDOException $e){
+                        http_response_code(500);
+
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);

@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: * ");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST,PUT,GET,DELETE");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -72,6 +72,53 @@ class horarios extends Controller
         }
     }
 
+       /**
+     * Obtiene todos los horarios
+     */
+    function empleado($token, $param)
+    {
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            //obtengo el id que viene en el array $param
+            $id = count($param) > 0 ? $param[0] : "";
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //extraemos los datos del modelo
+                $horarios = $this->model->getHorarioByEmpleadoId($id);
+                
+                if ($horarios != null) {
+                    //establecemos el código de estado 200->ok
+                    http_response_code(200);
+                    //formateamos la salida
+                    $salida = array();
+                   
+                    foreach ($horarios as $key => $value) {
+
+                        array_push($salida, ["id" => $value['id'], "hora_entrada" => $value['hora_entrada'],"hora_salida"=>$value['hora_salida'],"idEmpleado"=>$value['idEmpleado']]);
+                    }
+
+                    //a print_r($salida);}
+                    echo json_encode($salida);
+                } else {
+                    //si no hay usuarios mando código 404
+                    http_response_code(404);
+                    echo json_encode(array("mensaje" => "No se han encontrado horarios"));
+                }
+            } catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
+            }
+        }
+    }
+
     /**
      * Obtiene un horario por el id
      */
@@ -117,6 +164,8 @@ class horarios extends Controller
         }
     }
 
+ 
+
     /**
      * Crea un horario
      */
@@ -131,11 +180,11 @@ class horarios extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('horario', $data)) {
-                $horario = array_key_exists('horario', $data) ?  $data['horario'] : '';
-                $hora_entrada=array_key_exists('hora_entrada', $horario) ?  $horario['hora_entrada'] : '';
-                $hora_salida=array_key_exists('hora_salida', $horario) ?  $horario['hora_salida'] : '';
-                $idEMPLEADO=array_key_exists('idEMPLEADO', $horario) ?  $horario['idEMPLEADO'] : '';
+            if ($data != null && array_key_exists('hora_entrada', $data)) {
+                $empleado = array_key_exists('empleado', $data) ?  $data['empleado'] : '';
+                $hora_entrada=array_key_exists('hora_entrada', $data) ?  $data['hora_entrada'] : '';
+                $hora_salida=array_key_exists('hora_salida', $data) ?  $data['hora_salida'] : '';
+                $idEMPLEADO=array_key_exists('id', $empleado) ?  $empleado['id'] : '';
 
                 if (empty($hora_entrada)||empty($hora_salida)||empty($idEMPLEADO)) {
                     http_response_code(400);

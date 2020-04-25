@@ -102,6 +102,45 @@ class marcadosmodel extends model
             return null;
         }
     }
+    /**
+     * Obtiene un marcado por su id
+     */
+    function getMarcadoByEmpleadoId($id)
+    {
+        try {
+            $query = $this->db->connect()->prepare('SELECT * FROM marcado WHERE idEMPLEADO = :idEmpleado');
+            $query->execute(['idEmpleado' => $id]);
+            $marcados = [];
+            while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            
+               // var_dump($row);
+               $marcado= new Marcado();
+
+               $marcado->setIdMarcado($row['idMarcado']);
+               $marcado->setFecha($row['fecha']);
+               $marcado->setLongitud($row['longitud']);
+               $marcado->setLatitud($row['latitud']);
+               $marcado->setHora_inicio($row['hora_inicio']);
+               $marcado->setHora_final($row['hora_final']);
+               
+              
+             
+               $tipos_marcaje = new tipo_marcajesmodel;
+               $tipo_marcaje= $tipos_marcaje->getTipo_marcajeById($row['idTIPO_MARCAJE']);
+               $empleados = new empleadosmodel;
+               $empleado= $empleados->getEmpleadoById($row['idEMPLEADO']);
+
+               $marcado->setIdTipo_Marcaje($tipo_marcaje);
+               $marcado->setIdEMPLEADO($empleado);
+              
+               array_push($marcados, $marcado);
+               
+            }
+            return $marcados;
+        } catch (PDOException $e) {
+             throw $e;
+        }
+    }
    
     /**
      * Inserta u marcado en la bbdd
@@ -110,10 +149,10 @@ class marcadosmodel extends model
     {
         // var_dump( $marcado);
         try {
-            $query = $this->db->connect()->prepare("INSERT INTO marcado( nombre, longitud,  latitud, hora_inicio,hora_final,idTIPO_MARCAJE,idEMPLEADO) VALUES 
-                                                                       (:nombre, :longitud, :latitud, :hora_inicio, :hora_final, :idTIPO_MARCADO, :idEMPLEADO) ");
+            $query = $this->db->connect()->prepare("INSERT INTO marcado( fecha, longitud,  latitud, hora_inicio,hora_final,idTIPO_MARCAJE,idEMPLEADO) VALUES 
+                                                                       (:fecha, :longitud, :latitud, :hora_inicio, :hora_final, :idTIPO_MARCADO, :idEMPLEADO) ");
 
-            if ($query->execute(['nombre' => $marcado->getNombre(),
+            if ($query->execute(['fecha' => $marcado->getFecha(),
                                  'latitud' => $marcado->getLatitud(),
                                  'longitud' => $marcado->getLongitud(),
                                  'hora_inicio' => $marcado->getHora_inicio(),
@@ -134,8 +173,7 @@ class marcadosmodel extends model
                 return null;
             }
         } catch (PDOException $e) {
-            echo($e);
-            return $e;
+            throw $e;
         }
     }
 
@@ -155,8 +193,7 @@ class marcadosmodel extends model
                 return 400;
             }
         } catch (Exception $e) {
-            echo($e);
-            return $e;
+            throw $e;
         }
     }
 
@@ -168,20 +205,20 @@ class marcadosmodel extends model
        
         try{
             //actualiza el marcado
-            $query= $this->db->connect()->prepare("UPDATE marcado SET nombre = :nombre, longitud = :longitud, latitud = :latitud, hora_inicio = :hora_inicio, hora_final = :hora_final,idTIPO_MARCAJE = :idTIPO_MARCADO  WHERE idMARCADO = :idMarcado");
+            $query= $this->db->connect()->prepare("UPDATE marcado SET  longitud = :longitud, latitud = :latitud, hora_inicio = :hora_inicio, hora_final = :hora_final WHERE idMARCADO = :idMarcado");
             $query->execute(['idMarcado'=> $marcado->getIdMarcado(),
-                             'nombre'=>$marcado->getNombre(),                             
+                           //  'fecha'=>$marcado->getFecha(),                             
                              'longitud' =>$marcado->getLongitud(),
                              'latitud' =>$marcado->getLatitud(),
                              'hora_inicio' => $marcado->getHora_inicio(),
-                                 'hora_final' => $marcado->getHora_final(),
-                                 'idTIPO_MARCADO'=>$marcado->getIdTipo_marcaje(),
-                                 'idEMPLEADO'=>$marcado->getIdEMPLEADO()]);
+                                 'hora_final' => $marcado->getHora_final()]);
+                                 //'idTIPO_MARCADO'=>$marcado->getIdTipo_marcaje(),
+                              //   'idEMPLEADO'=>$marcado->getIdEMPLEADO()]);
 
             
             return $this->getMarcadoById($marcado->getIdMarcado());
         }catch(PDOException $e){
-            return $e;
+            throw $e;
         }
     }
 }

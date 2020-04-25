@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: * ");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST,PUT,GET");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -78,6 +78,14 @@ class marcados extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado marcados"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -134,6 +142,14 @@ class marcados extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado la sede"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -147,6 +163,75 @@ class marcados extends Controller
         }
     }
 
+    /**
+     * Obtiene un sede por id
+     * GET
+     */
+    function empleado($token, $param = [])
+    {    //comprueba que sea una petición get
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            //obtengo el id que viene en el array $param
+            $id = count($param) > 0 ? $param[0] : "";
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //obtengo el sede
+                $marcados = $this->model->getMarcadoByEmpleadoId($id);
+
+                if ($marcados != null) {
+                    //establecemos el código de estado 200->ok
+                    http_response_code(200);
+                    //formateamos la salida
+                    $salida = [];
+                   
+                    foreach ($marcados as $key => $value) {
+                        $empleado = $value->getIdEMPLEADO();
+                        $tipo_marcaje= $value->getIdTipo_Marcaje();
+                        array_push($salida,[
+                            "id" => $value->getIdMarcado(),
+                            "fecha" => $value->getfecha(),
+                            "horaInicio" => $value->getHora_inicio(),
+                            "horaFinal" => $value->getHora_final(),
+                            "longitud" => $value->getLongitud(),
+                            "latitud" => $value->getLatitud(),
+                            "empleado" => [
+                                'id' => $empleado->getIdEmpleado(),
+                                'nombre' => $empleado->getNombre(),
+                                'apellidos' => $empleado->getApellidos()
+                            ],
+                            "tipo_marcaje" =>$tipo_marcaje
+
+                        ]);
+                    }
+
+                    echo json_encode($salida);
+                } else {
+                    //si no existe sede mando código 404
+                    http_response_code(404);
+                    echo json_encode(array("mensaje" => "No se han encontrado la sede"));
+                }
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
+            }
+        }
+    }
    
 
     /**
@@ -162,18 +247,18 @@ class marcados extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('sede', $data)) {
-                $sede = array_key_exists('sede', $data) ?  $data['sede'] : '';
-
-                $fecha = array_key_exists('fecha', $sede) ? $sede['fecha'] : '';
-                $longitud = array_key_exists('longitud', $sede) ? $sede['longitud'] : '';
-                $latitud = array_key_exists('latitud', $sede) ? $sede['latitud'] : '';
-                $hora_inicio = array_key_exists('hora_inicio', $sede) ? $sede['hora_inicio'] : '';
-                $hora_final = array_key_exists('hora_final', $sede) ? $sede['hora_final'] : '';
-                $idTipo_marcaje = array_key_exists('tipo_marcaje', $sede) ? $sede['tipo_marcaje'] : '';
-                $idEmpleado = array_key_exists('idEmpleado', $sede) ? $sede['idEmpleado'] : '';
+            if ($data != null && array_key_exists('fecha', $data)) {
                 
-                if (empty($fecha) || empty($longitud) || empty($latitud) || empty($hora_inicio) || empty($hora_final) || empty($idTipo_marcaje) || empty($idEmpleado)) {
+
+                $fecha = array_key_exists('fecha', $data) ? $data['fecha'] : '';
+                $longitud = array_key_exists('longitud', $data) ? $data['longitud'] : '';
+                $latitud = array_key_exists('latitud', $data) ? $data['latitud'] : '';
+                $hora_inicio = array_key_exists('horaInicio', $data) ? $data['horaInicio'] : '';
+                $hora_final = array_key_exists('horaFinal', $data) ? $data['horaFinal'] : '';
+                $idTipo_marcaje = array_key_exists('idTipoMarcaje', $data) ? $data['idTipoMarcaje'] : '';
+                $idEmpleado = array_key_exists('idEmpleado', $data) ? $data['idEmpleado'] : '';
+                
+                if (empty($fecha)  || empty($hora_inicio)   || empty($idTipo_marcaje) || empty($idEmpleado)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
                 } else {
@@ -206,9 +291,11 @@ class marcados extends Controller
                             $salida = [];
                             $empleado = $marcadoDB->getIdEMPLEADO();
                         $tipo_marcaje= $marcadoDB->getIdTipo_Marcaje();
-                        array_push($salida, [
+                        $salida= [
                             "id" => $marcadoDB->getIdMarcado(),
                             "fecha" => $marcadoDB->getfecha(),
+                            "horaInicio" => $marcadoDB->getHora_inicio(),
+                            "horaFinal" => $marcadoDB->getHora_final(),
                             "longitud" => $marcadoDB->getLongitud(),
                             "latitud" => $marcadoDB->getLatitud(),
                             "empleado" => [
@@ -218,7 +305,7 @@ class marcados extends Controller
                             ],
                             "tipo_marcaje" =>$tipo_marcaje
 
-                        ]);
+                        ];
 
                             echo json_encode($salida);
                         } else {
@@ -226,6 +313,14 @@ class marcados extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar el marcado"));
                         }
+                    }catch(PDOException $e){
+                        http_response_code(500);
+        
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
@@ -270,7 +365,15 @@ class marcados extends Controller
                         echo json_encode(array("mensaje" => "No se ha podido borrar el marcado"));
                         break;
                 }
-            } catch (Exception $e) {
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
 
@@ -294,18 +397,19 @@ class marcados extends Controller
             $json = file_get_contents('php://input');
 
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('sede', $data)) {
-                $sede = array_key_exists('sede', $data) ?  $data['sede'] : '';
-                $idMarcado= array_key_exists('idMarcado', $sede) ? $sede['idMarcado'] : '';
-                $fecha = array_key_exists('fecha', $sede) ? $sede['fecha'] : '';
-                $longitud = array_key_exists('longitud', $sede) ? $sede['longitud'] : '';
-                $latitud = array_key_exists('latitud', $sede) ? $sede['latitud'] : '';
-                $hora_inicio = array_key_exists('hora_inicio', $sede) ? $sede['hora_inicio'] : '';
-                $hora_final = array_key_exists('hora_final', $sede) ? $sede['hora_final'] : '';
-                $idTipo_marcaje = array_key_exists('tipo_marcaje', $sede) ? $sede['tipo_marcaje'] : '';
-                $idEmpleado = array_key_exists('idEmpleado', $sede) ? $sede['idEmpleado'] : '';
+            if ($data != null && array_key_exists('id', $data)) {
+               $empleado = array_key_exists('empleado', $data) ? $data['empleado'] : '';
+               $tipo_marcaje =array_key_exists('tipo_marcaje', $data) ? $data['tipo_marcaje'] : '';
+                $idMarcado= array_key_exists('id', $data) ? $data['id'] : '';
+                $fecha = array_key_exists('fecha', $data) ? $data['fecha'] : '';
+                $longitud = array_key_exists('longitud', $data) ? $data['longitud'] : '';
+                $latitud = array_key_exists('latitud', $data) ? $data['latitud'] : '';
+                $hora_inicio = array_key_exists('horaInicio', $data) ? $data['horaInicio'] : '';
+                $hora_final = array_key_exists('horaFinal', $data) ? $data['horaFinal'] : '';
+                $idTipo_marcaje = array_key_exists('id', $data) ? $data['id'] : '';
+                $idEmpleado = array_key_exists('id', $empleado) ? $empleado['id'] : '';
                 
-                if (empty($idMarcado) ||empty($fecha) || empty($longitud) || empty($latitud) || empty($hora_inicio) || empty($hora_final) || empty($idTipo_marcaje) || empty($idEmpleado)) {
+                if (empty($idMarcado) ||empty($fecha)  || empty($hora_inicio) || empty($hora_final) || empty($idTipo_marcaje) || empty($idEmpleado)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
                 } else {
@@ -357,6 +461,14 @@ class marcados extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar la sede"));
                         }
+                    }catch(PDOException $e){
+                        http_response_code(500);
+        
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
