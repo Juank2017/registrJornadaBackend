@@ -45,13 +45,7 @@ class empresas extends Controller
                     http_response_code(200);
                     //formateamos la salida
                     $salida = array("paginacion"=>$empresas['paginacion'],"empresas"=>$empresas['empresas']);
-                    // array_push($salida,array("paginacion"=>$empresas['paginacion']));
-                    // array_push($salida,array("empresas"=>$empresas['empresas']));
-                    // foreach ($empresas['empresas'] as $key => $value) {
-
-                    //     array_push($salida, array('empresas'=>["id" => $value['id'], "nombre" => $value['nombre']]));
-                    // }
-                    //a print_r($salida);
+ 
                     echo json_encode($salida);
                 } else {
                     //si no hay usuarios mando código 404

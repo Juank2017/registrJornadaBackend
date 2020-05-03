@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: * ");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST,GET,PUT,DELETE");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -52,17 +52,19 @@ class notificaciones extends Controller
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
-                    $salida = [];
-                    array_push($salida,array("paginacion"=>$notificaciones['paginacion']));
+                   
+                    $not = [];
+                   
                     foreach ($notificaciones['notificaciones'] as $key => $value) {
                         $empleado = $value->getIdEMPLEADO();
 
-                        array_push($salida,array( [
+                        array_push($not, [
                             "id" => $value->getIdNotificacion(),
                             "fecha" => $value->getfecha(),
                             "texto_notificacion" => $value->getTexto_notificacion(),
                             "texto_respuesta" => $value->getTexto_respuesta(),
                             "leida" => $value->getLeida(),
+                            'loginEmisor' => $value->getLoginEmisor(),
                             "empleado" => [
                                 'id' => $empleado->getIdEmpleado(),
                                 'nombre' => $empleado->getNombre(),
@@ -70,15 +72,24 @@ class notificaciones extends Controller
                             ]
 
 
-                        ]));
+                        ]);
                     }
 
+                    $salida=array("paginacion"=>$notificaciones['paginacion'],'notificaciones'=> $not);
                     echo json_encode($salida);
                 } else {
                     //si no hay notificaciones mando código 404
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado notificaciones"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -91,7 +102,78 @@ class notificaciones extends Controller
             }
         }
     }
+/**
+     * Obtiene un sede por id
+     * GET
+     */
+    function empleado($token, $param = [])
+    {    //comprueba que sea una petición get
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            echo json_encode(array("mensaje" => 'Método no admitido'));
+        } else {
+            //obtengo el id que viene en el array $param
+            $id = count($param) > 0 ? $param[0] : "";
+            $pagina= (string)filter_input(INPUT_GET,'pagina');
+            try {
+                //comprobamos que el token esté ok
+                $decoded = JWT::decode($token, constant('key'), array('HS256'));
+                //obtengo el sede
+                $notificaciones = $this->model->getNotificacionesByEmpleadoId($pagina,$id);
 
+                if ($notificaciones != null) {
+                    //establecemos el código de estado 200->ok
+                    http_response_code(200);
+                    //formateamos la salida
+                    $salida = [];
+                    $not = [];
+                 //   array_push($salida,array("paginacion"=>$notificaciones['paginacion']));
+                    foreach ($notificaciones['notificaciones'] as $key => $value) {
+                        $empleado = $value->getIdEMPLEADO();
+
+                        array_push($not, [
+                            "id" => $value->getIdNotificacion(),
+                            "fecha" => $value->getfecha(),
+                            "texto_notificacion" => $value->getTexto_notificacion(),
+                            "texto_respuesta" => $value->getTexto_respuesta(),
+                            "leida" => $value->getLeida(),
+                            'loginEmisor' => $value->getLoginEmisor(),
+                            "empleado" => [
+                                'id' => $empleado->getIdEmpleado(),
+                                'nombre' => $empleado->getNombre(),
+                                'apellidos' => $empleado->getApellidos()
+                            ]
+
+
+                        ]);
+                    }
+
+                    $salida=array("paginacion"=>$notificaciones['paginacion'],'notificaciones'=> $not);
+                    echo json_encode($salida);
+                } else {
+                    //si no existe sede mando código 404
+                    http_response_code(404);
+                    echo json_encode(array("mensaje" => "No se han encontrado la sede"));
+                }
+            } catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
+            }catch (Exception $e) {
+                // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
+                http_response_code(401);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Acceso denegado',
+                    "error" => $e->getMessage()
+                ));
+            }
+        }
+    }
     /**
      * Obtiene un notificacion por id
      * GET
@@ -116,26 +198,35 @@ class notificaciones extends Controller
                     $salida = [];
                     $empleado = $notificacionDB->getIdEMPLEADO();
 
-                    array_push($salida, [
+                    $salida= [
                         "id" => $notificacionDB->getIdNotificacion(),
-                        "fecha" => $notificacionDB->getfecha(),
-                        "texto_notificacion" => $notificacionDB->getTexto_notificacion(),
-                        "texto_respuesta" => $notificacionDB->getTexto_respuesta(),
-                        "leida" => $notificacionDB->getLeida(),
-                        "empleado" => [
-                            'id' => $empleado->getIdEmpleado(),
-                            'nombre' => $empleado->getNombre(),
-                            'apellidos' => $empleado->getApellidos()
-                        ]
+                            "fecha" => $notificacionDB->getfecha(),
+                            "texto_notificacion" => $notificacionDB->getTexto_notificacion(),
+                            "texto_respuesta" => $notificacionDB->getTexto_respuesta(),
+                            "leida" => $notificacionDB->getLeida(),
+                            'loginEmisor' => $notificacionDB->getLoginEmisor(),
+                            "empleado" => [
+                                'id' => $empleado->getIdEmpleado(),
+                                'nombre' => $empleado->getNombre(),
+                                'apellidos' => $empleado->getApellidos()
+                            ]
 
 
-                    ]);
+                    ];
                     echo json_encode($salida);
                 } else {
                     //si no existe notificacion mando código 404
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado la notificacion"));
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -164,17 +255,18 @@ class notificaciones extends Controller
 
             // echo $json;
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('notificacion', $data)) {
-                $notificacion = array_key_exists('notificacion', $data) ?  $data['notificacion'] : '';
+           //var_dump($data);
+            if ($data != null && array_key_exists('id', $data)) {
+                 
+                      $fecha = array_key_exists('fecha', $data) ? $data['fecha'] : '';
+                      $texto_notificacion = array_key_exists('texto_notificacion', $data) ? $data['texto_notificacion'] : '';
+                      $texto_respuesta = array_key_exists('texto_respuesta', $data) ? $data['texto_respuesta'] : '';
+                      $leida = array_key_exists('leida', $data) ? $data['leida'] : '';
+                      $idEMPLEADO = array_key_exists('idEMPLEADO', $data) ? $data['idEMPLEADO'] : '';
+                      $loginEmisor = array_key_exists('loginEmisor', $data) ? $data['loginEmisor'] : '';
 
-                $fecha = array_key_exists('fecha', $notificacion) ? $notificacion['fecha'] : '';
-                $texto_notificacion = array_key_exists('texto_notificacion', $notificacion) ? $notificacion['texto_notificacion'] : '';
-                $texto_respuesta = array_key_exists('texto_respuesta', $notificacion) ? $notificacion['texto_respuesta'] : '';
-                $leida = array_key_exists('leida', $notificacion) ? $notificacion['leida'] : '';
-                $idEMPLEADO = array_key_exists('idEMPLEADO', $notificacion) ? $notificacion['idEMPLEADO'] : '';
 
-
-                if (empty($fecha) || empty($texto_notificacion) || empty($texto_respuesta) || empty($leida) || empty($idEMPLEADO)) {
+                if (empty($fecha) || empty($texto_notificacion)   || empty($idEMPLEADO)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
                 } else {
@@ -186,6 +278,7 @@ class notificaciones extends Controller
                     $nuevoNotificacion->setTexto_respuesta($texto_respuesta);
                     $nuevoNotificacion->setLeida($leida);
                     $nuevoNotificacion->setIdEMPLEADO($idEMPLEADO);
+                    $nuevoNotificacion->setLoginEmisor($loginEmisor);
 
 
 
@@ -212,6 +305,7 @@ class notificaciones extends Controller
                                 "texto_notificacion" => $notificacionDB->getTexto_notificacion(),
                                 "texto_respuesta" => $notificacionDB->getTexto_respuesta(),
                                 "leida" => $notificacionDB->getLeida(),
+                                'loginEmisor' => $notificacionDB->getLoginEmisor(),
                                 "empleado" => [
                                     'id' => $empleado->getIdEmpleado(),
                                     'nombre' => $empleado->getNombre(),
@@ -227,6 +321,14 @@ class notificaciones extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar el notificacion"));
                         }
+                    }catch(PDOException $e){
+                        http_response_code(500);
+        
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);
@@ -271,6 +373,14 @@ class notificaciones extends Controller
                         echo json_encode(array("mensaje" => "No se ha podido borrar el notificacion"));
                         break;
                 }
+            }catch(PDOException $e){
+                http_response_code(500);
+
+                // show error message
+                echo json_encode(array(
+                    "message" => 'Error en la BBDD',
+                    "error" => $e->getMessage()
+                ));
             } catch (Exception $e) {
                 // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                 http_response_code(401);
@@ -295,14 +405,15 @@ class notificaciones extends Controller
             $json = file_get_contents('php://input');
 
             $data = json_decode($json, true);
-            if ($data != null && array_key_exists('notificacion', $data)) {
-                $notificacion = array_key_exists('notificacion', $data) ?  $data['notificacion'] : '';
-                $idNotificacion = array_key_exists('idNotificacion', $notificacion) ? $notificacion['idNotificacion'] : '';
-                $fecha = array_key_exists('fecha', $notificacion) ? $notificacion['fecha'] : '';
-                $texto_notificacion = array_key_exists('texto_notificacion', $notificacion) ? $notificacion['texto_notificacion'] : '';
-                $texto_respuesta = array_key_exists('texto_respuesta', $notificacion) ? $notificacion['texto_respuesta'] : '';
-                $leida = array_key_exists('leida', $notificacion) ? $notificacion['leida'] : '';
-                $idEMPLEADO = array_key_exists('idEMPLEADO', $notificacion) ? $notificacion['idEMPLEADO'] : '';
+            if ($data != null && array_key_exists('id', $data)) {
+              
+                $idNotificacion = array_key_exists('id', $data) ? $data['id'] : '';
+                $fecha = array_key_exists('fecha', $data) ? $data['fecha'] : '';
+                $texto_notificacion = array_key_exists('texto_notificacion', $data) ? $data['texto_notificacion'] : '';
+                $texto_respuesta = array_key_exists('texto_respuesta', $data) ? $data['texto_respuesta'] : '';
+                $leida = array_key_exists('leida', $data) ? $data['leida'] : '';
+                $idEMPLEADO = array_key_exists('idEMPLEADO', $data) ? $data['idEMPLEADO'] : '';
+                $loginEmisor = array_key_exists('loginEmisor', $data) ? $data['loginEmisor'] : '';
 
 
                 if (empty($fecha) || empty($texto_notificacion) || empty($texto_respuesta) || empty($leida) || empty($idEMPLEADO)) {
@@ -319,6 +430,7 @@ class notificaciones extends Controller
                     $notificacionActualizado->setLeida($leida);
                     $notificacionActualizado->setIdEMPLEADO($idEMPLEADO);
                     $notificacionActualizado->setIdNotificacion($idNotificacion);
+                    $notificacionActualizado->setLoginEmisor($loginEmisor);
 
                     try {
                         //comprobamos que el token esté ok
@@ -341,13 +453,12 @@ class notificaciones extends Controller
                                 "texto_notificacion" => $notificacionDB->getTexto_notificacion(),
                                 "texto_respuesta" => $notificacionDB->getTexto_respuesta(),
                                 "leida" => $notificacionDB->getLeida(),
+                                'loginEmisor' => $notificacionDB->getLoginEmisor(),
                                 "empleado" => [
                                     'id' => $empleado->getIdEmpleado(),
                                     'nombre' => $empleado->getNombre(),
                                     'apellidos' => $empleado->getApellidos()
                                 ]
-
-
                             ]);
 
                             echo json_encode($salida);
@@ -356,6 +467,14 @@ class notificaciones extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar la notificacion"));
                         }
+                    }catch(PDOException $e){
+                        http_response_code(500);
+        
+                        // show error message
+                        echo json_encode(array(
+                            "message" => 'Error en la BBDD',
+                            "error" => $e->getMessage()
+                        ));
                     } catch (Exception $e) {
                         // si viene mal el token, devolvemos status 401 y mensaje de acceso denegado
                         http_response_code(401);

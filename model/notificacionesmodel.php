@@ -43,7 +43,7 @@ class notificacionesmodel extends model
                 $notificacion->setTexto_notificacion($row['texto_notificacion']);
                 $notificacion->setTexto_respuesta($row['texto_respuesta']);
                 $notificacion->setLeida($row['leida']);
-                
+                $notificacion->setLoginEmisor($row['loginEmisor']);
                 $empleados = new empleadosmodel;
                 $empleado= $empleados->getEmpleadoById($row['idEMPLEADO']);
  
@@ -55,11 +55,50 @@ class notificacionesmodel extends model
             $totalRegistros=$this->db->connect()->query("SELECT COUNT(*) as total from notificacion")->fetch()['total'];
             $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
             
-            $salida=  array('paginacion'=>array('total registros'=>$totalRegistros,'paginas'=>$totalPaginas),'notificaciones'=>$notificaciones);
+            $salida=  array('paginacion'=>array('registros'=>$totalRegistros,'paginas'=>$totalPaginas),'notificaciones'=>$notificaciones);
             return $salida;
         } catch (PDOException $e) {
-            echo($e);
-            return $e;
+           throw $e;
+        }
+    }
+/**
+     * Obtiene la lita de notificaciones de la base de datos
+     */
+    function getNotificacionesByEmpleadoId($pagina=0,$idEmpleado)
+    {
+        $registrosPorPagina=constant('REG_POR_PAGINA');
+        $registroInicial=($pagina>1)? (($pagina * $registrosPorPagina)- $registrosPorPagina) :0;
+
+        try {
+            $query = $this->db->connect()->prepare('SELECT * FROM notificacion WHERE notificacion.idEMPLEADO = :idEmpleado LIMIT :registroInicial,:registrosPorPagina');
+
+            $query->execute(['registroInicial'=>$registroInicial,'registrosPorPagina'=>$registrosPorPagina,'idEmpleado'=>$idEmpleado]);
+            $notificaciones = [];
+            while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+               // var_dump($row);
+                $notificacion= new Notificacion();
+
+                $notificacion->setIdNotificacion($row['idNOTIFICACION']);
+                $notificacion->setFecha($row['fecha']);
+                $notificacion->setTexto_notificacion($row['texto_notificacion']);
+                $notificacion->setTexto_respuesta($row['texto_respuesta']);
+                $notificacion->setLeida($row['leida']);
+                $notificacion->setLoginEmisor($row['loginEmisor']);
+                $empleados = new empleadosmodel;
+                $empleado= $empleados->getEmpleadoById($row['idEMPLEADO']);
+ 
+                
+                $notificacion->setIdEMPLEADO($empleado);
+               
+                array_push($notificaciones, $notificacion);
+            }
+            $totalRegistros=$this->db->connect()->query('SELECT COUNT(*) as total from notificacion WHERE notificacion.idEMPLEADO='.$idEmpleado)->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros/$registrosPorPagina);
+            
+            $salida=  array('paginacion'=>array('registros'=>$totalRegistros,'paginas'=>$totalPaginas),'notificaciones'=>$notificaciones);
+            return $salida;
+        } catch (PDOException $e) {
+           throw $e;
         }
     }
 
@@ -80,7 +119,7 @@ class notificacionesmodel extends model
                 $notificacion->setTexto_notificacion($row['texto_notificacion']);
                 $notificacion->setTexto_respuesta($row['texto_respuesta']);
                 $notificacion->setLeida($row['leida']);
-                
+                $notificacion->setLoginEmisor($row['loginEmisor']);
                 $empleados = new empleadosmodel;
                 $empleado= $empleados->getEmpleadoById($row['idEMPLEADO']);
  
@@ -90,7 +129,7 @@ class notificacionesmodel extends model
             }
             return $notificacion;
         } catch (PDOException $e) {
-            return null;
+            throw $e;
         }
     }
    
@@ -101,13 +140,14 @@ class notificacionesmodel extends model
     {
         // var_dump( $notificacion);
         try {
-            $query = $this->db->connect()->prepare("INSERT INTO notificacion( fecha,  texto_notificacion,texto_respuesta,leida,idEMPLEADO) VALUES 
-                                                                       ( :fecha, :texto_notificacion,:texto_respuesta,:leida, :idEMPLEADO) ");
+            $query = $this->db->connect()->prepare("INSERT INTO notificacion( fecha,  texto_notificacion,texto_respuesta,leida,idEMPLEADO, loginEmisor) VALUES 
+                                                                       ( :fecha, :texto_notificacion,:texto_respuesta,:leida, :idEMPLEADO,:loginEmisor) ");
 
             if ($query->execute(['fecha' => $notificacion->getFecha(),
                                  'texto_notificacion' => $notificacion->getTexto_notificacion(),
                                  'texto_respuesta' => $notificacion->getTexto_respuesta(),
                                  'leida' => $notificacion->getLeida(),
+                                 'loginEmisor' => $notificacion->getLoginEmisor(),
                                  'idEMPLEADO' => $notificacion->getidEMPLEADO()]))
                                   {
                 //si se inserta correcatmente hay que averiguar el id que se le ha asignado para hacer la inserción en las
@@ -123,8 +163,7 @@ class notificacionesmodel extends model
                 return null;
             }
         } catch (PDOException $e) {
-            echo($e);
-            return $e;
+            throw $e;
         }
     }
 
@@ -144,8 +183,7 @@ class notificacionesmodel extends model
                 return 400;
             }
         } catch (Exception $e) {
-            echo($e);
-            return $e;
+            throw $e;
         }
     }
 
@@ -163,12 +201,13 @@ class notificacionesmodel extends model
                                  'texto_respuesta' => $notificacion->getTexto_respuesta(),
                                  'leida' => $notificacion->getLeida(),
                                  'idEMPLEADO' => $notificacion->getidEMPLEADO(),
+                                 
                                  'idNotificacion'=>$notificacion->getIdNOTIFICACION()]);
 
             
             return $this->getNotificacionById($notificacion->getIdNotificacion());
         }catch(PDOException $e){
-            return $e;
+            throw $e;
         }
     }
 }

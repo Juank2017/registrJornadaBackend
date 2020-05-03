@@ -174,22 +174,25 @@ class marcados extends Controller
         } else {
             //obtengo el id que viene en el array $param
             $id = count($param) > 0 ? $param[0] : "";
+            $pagina= (string)filter_input(INPUT_GET,'pagina');
             try {
                 //comprobamos que el token esté ok
                 $decoded = JWT::decode($token, constant('key'), array('HS256'));
                 //obtengo el sede
-                $marcados = $this->model->getMarcadoByEmpleadoId($id);
+                $marcados = $this->model->getMarcadoByEmpleadoId($id,$pagina);
 
                 if ($marcados != null) {
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
                     $salida = [];
-                   
-                    foreach ($marcados as $key => $value) {
+                    $mark = [];
+                 //  print_r($marcados);
+                 array_push($salida,array("paginacion"=>$marcados['paginacion']));
+                    foreach ($marcados['marcados'] as $key => $value) {
                         $empleado = $value->getIdEMPLEADO();
                         $tipo_marcaje= $value->getIdTipo_Marcaje();
-                        array_push($salida,[
+                        array_push($mark,[
                             "id" => $value->getIdMarcado(),
                             "fecha" => $value->getfecha(),
                             "horaInicio" => $value->getHora_inicio(),
@@ -205,7 +208,7 @@ class marcados extends Controller
 
                         ]);
                     }
-
+                    $salida=array("paginacion"=>$marcados['paginacion'],'marcados'=> $mark);
                     echo json_encode($salida);
                 } else {
                     //si no existe sede mando código 404

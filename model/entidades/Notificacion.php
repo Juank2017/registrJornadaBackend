@@ -18,10 +18,13 @@ class Notificacion {
     protected $texto_respuesta;
     protected $leida;
     protected $idEMPLEADO;
-    
+    protected $loginEmisor;
+
     function __construct() {
  
     }
+
+ 
     function getIdNotificacion() {
         return $this->idNotificacion;
     }
@@ -44,6 +47,10 @@ class Notificacion {
 
     function getIdEMPLEADO() {
         return $this->idEMPLEADO;
+    }
+
+    function getLoginEmisor() {
+        return $this->loginEmisor;
     }
 
     function setIdNotificacion($idNotificacion): void {
@@ -70,5 +77,8 @@ class Notificacion {
         $this->idEMPLEADO = $idEMPLEADO;
     }
 
+    function setLoginEmisor($loginEmisor): void {
+        $this->loginEmisor = $loginEmisor;
+    }
 
 }

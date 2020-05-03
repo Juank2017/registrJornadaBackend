@@ -105,11 +105,22 @@ class marcadosmodel extends model
     /**
      * Obtiene un marcado por su id
      */
-    function getMarcadoByEmpleadoId($id)
+    function getMarcadoByEmpleadoId($id,$pagina)
     {
+        $registrosPorPagina = constant('REG_POR_PAGINA');
         try {
-            $query = $this->db->connect()->prepare('SELECT * FROM marcado WHERE idEMPLEADO = :idEmpleado');
-            $query->execute(['idEmpleado' => $id]);
+
+            if ($pagina != '-1'){
+                $registroInicial = ($pagina > 1) ? (($pagina * $registrosPorPagina) - $registrosPorPagina) : 0;
+               
+                $query = $this->db->connect()->prepare('SELECT * FROM marcado WHERE idEmpleado = :idEmpleado  ORDER  BY marcado.fecha DESC LIMIT :registroInicial,:registrosPorPagina ');
+                $query->execute(['registroInicial' => $registroInicial, 'registrosPorPagina' => $registrosPorPagina, 'idEmpleado' => $id]);
+            }else{
+                $query = $this->db->connect()->prepare('SELECT * FROM marcado WHERE idEMPLEADO = :idEmpleado ORDER  BY marcado.fecha DESC');
+                $query->execute(['idEmpleado' => $id]);
+            }
+
+           
             $marcados = [];
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
             
@@ -136,7 +147,12 @@ class marcadosmodel extends model
                array_push($marcados, $marcado);
                
             }
-            return $marcados;
+            $totalRegistros = $this->db->connect()->query("SELECT COUNT(*) as total from marcado WHERE marcado.idEMPLEADO =".$id)->fetch()['total'];
+            $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
+
+            $salida =  array('paginacion' => array('registros' => $totalRegistros, 'paginas' => $totalPaginas), 'marcados' => $marcados);
+           // print_r($salida);
+            return $salida;
         } catch (PDOException $e) {
              throw $e;
         }

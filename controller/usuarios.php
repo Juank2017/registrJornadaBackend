@@ -168,13 +168,13 @@ class usuarios extends Controller
                     $nuevoUsuario->setRoles($data['roles']);
                     $nuevoUsuario->setEmpresas($data['empresas']);
 
+                   // print_r($nuevoUsuario);
 
                     try {
                         //comprobamos que el token esté ok
                         $decoded = JWT::decode($token, constant('key'), array('HS256'));
                         //compruebo si el login ya existe
                         $usuarioDB = $this->model->getUserByLogin($login);
-
                         if (!$usuarioDB instanceof Usuario) {
 
 
