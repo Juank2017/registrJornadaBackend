@@ -44,15 +44,15 @@ class empresas extends Controller
                     //establecemos el código de estado 200->ok
                     http_response_code(200);
                     //formateamos la salida
-                    $salida = array("paginacion"=>$empresas['paginacion'],"empresas"=>$empresas['empresas']);
- 
+                    $salida = array("paginacion" => $empresas['paginacion'], "empresas" => $empresas['empresas']);
+
                     echo json_encode($salida);
                 } else {
                     //si no hay usuarios mando código 404
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado empresas"));
                 }
-            } catch (PDOException $e){
+            } catch (PDOException $e) {
                 http_response_code(500);
 
                 // show error message
@@ -76,7 +76,7 @@ class empresas extends Controller
     /**
      * Obtiene una empresa por el id
      */
-    function empresa( $token,$param)
+    function empresa($token, $param)
     {
         //comprueba que sea una petición get
         if ($_SERVER['REQUEST_METHOD'] != 'GET') {
@@ -95,7 +95,7 @@ class empresas extends Controller
                     //formateamos la salida
                     $salida = [];
 
-                    array_push($salida, ["id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'],"cif"=>$empresaDB['cif']]);
+                    array_push($salida, ["id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'], "cif" => $empresaDB['cif']]);
 
                     echo json_encode($salida);
                 } else {
@@ -103,9 +103,7 @@ class empresas extends Controller
                     http_response_code(404);
                     echo json_encode(array("mensaje" => "No se han encontrado la empresa"));
                 }
-
-                //code...
-            } catch (PDOException $e){
+            } catch (PDOException $e) {
                 http_response_code(500);
 
                 // show error message
@@ -145,7 +143,7 @@ class empresas extends Controller
                 $cif = array_key_exists('cif', $data) ?  $data['cif'] : '';
 
 
-                if (empty($nombre)||empty($cif)) {
+                if (empty($nombre) || empty($cif)) {
                     http_response_code(400);
                     echo json_encode(array("mensaje" => "Faltan datos"));
                 } else {
@@ -155,22 +153,22 @@ class empresas extends Controller
                         $decoded = JWT::decode($token, constant('key'), array('HS256'));
 
                         //intento insertar el usuario
-                        $empresaDB = $this->model->createEmpresa($nombre,$cif);
+                        $empresaDB = $this->model->createEmpresa($nombre, $cif);
 
                         if ($empresaDB != null) {
                             //establecemos el código de estado 200->ok
                             http_response_code(200);
                             //formateamos la salida
-                           
 
-                           $salida= array( "id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'],"cif"=>$empresaDB['cif']);
+
+                            $salida = array("id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'], "cif" => $empresaDB['cif']);
                             echo json_encode($salida);
                         } else {
                             //si no existe usuario mando código 404
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido insertar la empresa"));
                         }
-                    }catch (PDOException $e){
+                    } catch (PDOException $e) {
                         http_response_code(500);
 
                         // show error message
@@ -178,7 +176,7 @@ class empresas extends Controller
                             "message" => 'Error en la BBDD',
                             "error" => $e->getMessage()
                         ));
-                    } catch (PDOException $e){
+                    } catch (PDOException $e) {
                         http_response_code(500);
 
                         // show error message
@@ -207,7 +205,8 @@ class empresas extends Controller
     /**
      * Borra un rol
      */
-    function delete($token,$param){
+    function delete($token, $param)
+    {
         if ($_SERVER['REQUEST_METHOD'] != 'DELETE') {
             echo json_encode(array("mensaje" => 'Método no admitido'));
         } else {
@@ -229,7 +228,7 @@ class empresas extends Controller
                         echo json_encode(array("mensaje" => "No se ha podido borrar la empresa"));
                         break;
                 }
-            } catch (PDOException $e){
+            } catch (PDOException $e) {
                 http_response_code(500);
 
                 // show error message
@@ -251,7 +250,7 @@ class empresas extends Controller
     }
 
 
-        /**
+    /**
      * Actualiza una empresa en la bdd
      */
     function update($token)
@@ -273,21 +272,21 @@ class empresas extends Controller
                     echo json_encode(array("mensaje" => "Faltan datos"));
                 } else {
 
-                    
+
 
                     try {
                         //comprobamos que el token esté ok
                         $decoded = JWT::decode($token, constant('key'), array('HS256'));
 
-                        $empresaDB = $this->model->updateEmpresa($id,$nombre,$cif);
+                        $empresaDB = $this->model->updateEmpresa($id, $nombre, $cif);
 
-                        if ($empresaDB !=null ) {
+                        if ($empresaDB != null) {
                             //establecemos el código de estado 200->ok
                             http_response_code(200);
                             //formateamos la salida
                             $salida = [];
 
-                            array_push($salida, ["id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'],"cif"=>$empresaDB['cif']]);
+                            array_push($salida, ["id" => $empresaDB['id'], "nombre" => $empresaDB['nombre'], "cif" => $empresaDB['cif']]);
 
                             echo json_encode($salida);
                         } else {
@@ -295,7 +294,7 @@ class empresas extends Controller
                             http_response_code(500);
                             echo json_encode(array("mensaje" => "No se ha podido actualizar la empresa"));
                         }
-                    } catch (PDOException $e){
+                    } catch (PDOException $e) {
                         http_response_code(500);
 
                         // show error message

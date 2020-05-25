@@ -1,7 +1,5 @@
 <?php
 
-//require_once 'controllers/errores.php';
-
 class App{
 
     public function __construct(){
@@ -12,11 +10,7 @@ class App{
         $url = explode('/', rtrim($url, '/'));
        
         if(empty($url[0])){
-//            $archivoController = 'controllers/index.php';
-//            require $archivoController;
-//            $controller = new Index();
-//           // $controller->render();
-//            $controller->loadModel('index');
+
             return false;
         }else{
             $archivoController = 'controller/' . $url[0] . '.php';
@@ -27,12 +21,9 @@ class App{
 
             $controller = new $url[0];
             $controller->loadModel($url[0]);
-
             // Se obtienen el número de param
             $nparam = sizeof($url);
             // si se llama a un método
-         
-            
             if($nparam > 1){
                 // hay parámetros
                 if($nparam > 2){
@@ -40,11 +31,8 @@ class App{
                     for($i = 2; $i < $nparam; $i++){
                         array_push($param, $url[$i]);
                     }
-                   
-               
                     $controller->{$url[1]}($token,$param);
                 }else{
-                   
                     // solo se llama al método
                     $controller->{$url[1]}($token);
                 }
@@ -53,9 +41,9 @@ class App{
                 $controller->index($token,$pagina);  
             }
         }else{
-            //$controller = new Errores();
+            http_response_code(404);
+            echo json_encode(array("mensaje" => "No puedo encontrar ese recurso"));
         }
     }
     
 }
-?>
